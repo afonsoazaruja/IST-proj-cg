@@ -9,9 +9,11 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 //////////////////////
 var cameras=new Array(), camera, scene, renderer;
 
-var geometry, material1, material2, mesh;
+var geometry, material1, material2, material3, mesh;
 
 var base, crane;
+
+var c=1, h=10;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -23,6 +25,7 @@ function createScene(){
     scene.background = color;
     scene.add(new THREE.AxesHelper(10));
     createBase();
+    createCrane();
 }
 
 //////////////////////
@@ -51,17 +54,16 @@ function createOrthographicCamera(id,x,y,z) {
     cam.position.x = x;
     cam.position.y = y;
     cam.position.z = z;
-    cam.lookAt(scene.position);
+    cam.lookAt(0, c+h/2, 0);
 
     cameras[id] = cam;
-    cam.lookAt(scene.position);
 }
 
 function createCameras(){
-    createOrthographicCamera(0,0,10,10);
-    createOrthographicCamera(1,10,10,0);
+    createOrthographicCamera(0,0,6,5);
+    createOrthographicCamera(1,10,6,0);
     createOrthographicCamera(2,0,20,0);
-    createOrthographicCamera(3,10,10,10);
+    createOrthographicCamera(3,10,6,10);
     createPersepectiveCamera(4,15,15,15);
     camera = cameras[0];
 
@@ -86,7 +88,7 @@ function addCube(obj, x, y, z, ref_x, ref_y, ref_z, material) {
 }
 
 /* Function that creates a cilinder and positions it in the referencial */
-function addCylinder(obj, rt, rb, h, ref_x, ref_y, ref_z) {
+function addCylinder(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, material) {
     'use strict';
     
     geometry = new THREE.CylinderGeometry(rt, rb, h, rs);
@@ -108,19 +110,41 @@ function addTetrahedron(obj, r, d, ref_x, ref_y, ref_z, material) {
 function createBase() {
     'use strict';
 
-    var base = new THREE.Object3D();
+    base = new THREE.Object3D();
 
-    material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D, wireframe: false });
-    material2 = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: false });
+    material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D});
+    material2 = new THREE.MeshBasicMaterial({ color: 0x000000});
     
-    addCube(base, 2, 1, 2, 0, 0, 0, material2); // add base
-    addCube(base, 1, 10, 1, 0, 5, 0, material1); // add tower
+    addCube(base, 2*c, c, 2*c, 0, 0, 0, material2); // add base
+    addCube(base, 1, h, 1, 0, h/2+c/2, 0, material1); // add tower
 
     scene.add(base);
 
     base.position.x = 0;
     base.position.y = 0;
     base.position.z = 0;
+}
+
+function createCrane() {
+    'use strict';
+
+    crane = new THREE.Object3D();
+
+    material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D});
+    material2 = new THREE.MeshBasicMaterial({ color: 0x000000});
+    material3 = new THREE.MeshBasicMaterial({ color: 0xFF9933});
+    
+    addCylinder(crane, c, c, c, 50, 0, 0, 0, material2); // axis of rotation
+    addCube(crane, c, c, 15*c, 0, c, 3*c, material1); // jib and counterjib
+    addCube(crane, c, c, c, c, c, 0, material3); // cabine
+    addTetrahedron(crane, c, 0, 0, 2*c, 0, material3); // apex
+    addCube(crane, c/2, 2*c, c, 0, 0, -3*c, material2); // counterweight
+    
+    scene.add(crane);
+
+    crane.position.x = 0;
+    crane.position.y = c+h;
+    crane.position.z = 0;
 }
 
 //////////////////////
@@ -199,11 +223,6 @@ function onKeyDown(e) {
     switch (e.keyCode) {
     case 49: //'1'
         camera = cameras[0];
-        scene.traverse(function (node) {
-            if (node instanceof THREE.Mesh) {
-                node.material.wireframe = !node.material.wireframe;
-            }
-        });
         break;
 
     case 50: //'2'
@@ -221,10 +240,15 @@ function onKeyDown(e) {
     case 53: //'5'
         camera = cameras[4];
         break;
-    case 53: //'6'
-        camera = cameras[5];
+    case 54: //'6'
+        //camera = cameras[5];
         break;
-
+    case 55:
+        scene.traverse(function (node) {
+            if (node instanceof THREE.Mesh) {
+                node.material.wireframe = !node.material.wireframe;
+            }
+        });
     }
 }
 
