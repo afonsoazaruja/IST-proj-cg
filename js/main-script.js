@@ -7,7 +7,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
-var cameras=new Array(), scene, renderer;
+var cameras=new Array(), camera, scene, renderer;
 
 var geometry, material1, material2, mesh;
 
@@ -46,19 +46,25 @@ function createPersepectiveCamera(id,x,y,z) {
 
 function createOrthographicCamera(id,x,y,z) {
     'use strict';
-    cameras[id] = new THREE.OrthographicCamera(window.innerWidth / -16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / -16, 1, 1000);
-    cameras[id].position.x = x;
-    cameras[id].position.y = y;
-    cameras[id].position.z = z;
-    cameras[id].lookAt(scene.position);
+    var cam;
+    cam = new THREE.OrthographicCamera(window.innerWidth / - 100, window.innerWidth / 100, window.innerHeight / 100, window.innerHeight / - 100, 1, 100);
+    cam.position.x = x;
+    cam.position.y = y;
+    cam.position.z = z;
+    cam.lookAt(scene.position);
 
-    new THREE.cameras[id]
+    cameras[id] = cam;
+    cam.lookAt(scene.position);
 }
 
 function createCameras(){
-    for(var i=0;i<6;i++){
-        createPersepectiveCamera(i,17,17,17);
-    }
+    createOrthographicCamera(0,0,10,10);
+    createOrthographicCamera(1,10,10,0);
+    createOrthographicCamera(2,0,20,0);
+    createOrthographicCamera(3,10,10,10);
+    createPersepectiveCamera(4,15,15,15);
+    camera = cameras[0];
+
 }
 
 /////////////////////
@@ -146,7 +152,7 @@ function update(){
 /////////////
 function render() {
     'use strict';
-    renderer.render(scene, cameras[0]);
+    renderer.render(scene, camera);
 }
 
 ////////////////////////////////
@@ -162,6 +168,8 @@ function init() {
 
     createScene();
     createCameras();
+
+    window.addEventListener("keydown", onKeyDown);
 }
 
 /////////////////////
@@ -188,8 +196,9 @@ function onResize() {
 function onKeyDown(e) {
     'use strict';
 
-    /*switch (e.keyCode) {
+    switch (e.keyCode) {
     case 49: //'1'
+        camera = cameras[0];
         scene.traverse(function (node) {
             if (node instanceof THREE.Mesh) {
                 node.material.wireframe = !node.material.wireframe;
@@ -198,45 +207,25 @@ function onKeyDown(e) {
         break;
 
     case 50: //'2'
-        scene.traverse(function (node) {
-            if (node instanceof THREE.Mesh) {
-                node.material.wireframe = !node.material.wireframe;
-            }
-        });
+        camera = cameras[1];
         break;
 
     case 51: //'3'
-        scene.traverse(function (node) {
-            if (node instanceof THREE.AxesHelper) {
-                node.visible = !node.visible;
-            }
-        });
+        camera = cameras[2];
         break;
 
     case 52: //'4'
-        scene.traverse(function (node) {
-            if (node instanceof THREE.AxesHelper) {
-                node.visible = !node.visible;
-            }
-        });
+        camera = cameras[3];
         break;
 
     case 53: //'5'
-        scene.traverse(function (node) {
-            if (node instanceof THREE.AxesHelper) {
-                node.visible = !node.visible;
-            }
-        });
+        camera = cameras[4];
         break;
     case 53: //'6'
-        scene.traverse(function (node) {
-            if (node instanceof THREE.AxesHelper) {
-                node.visible = !node.visible;
-            }
-        });
+        camera = cameras[5];
         break;
 
-    }*/
+    }
 }
 
 ///////////////////////
