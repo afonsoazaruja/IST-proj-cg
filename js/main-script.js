@@ -9,9 +9,9 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 //////////////////////
 var cameras=new Array(), camera, scene, renderer;
 
-var geometry, material1, material2, material3, mesh;
+var geometry, material1, material2, material3, material4, material5, mesh;
 
-var base, crane;
+var base, crane, car, claw;
 
 var c=1, h=10;
 
@@ -26,6 +26,8 @@ function createScene(){
     scene.add(new THREE.AxesHelper(10));
     createBase();
     createCrane();
+    createCar();
+    createClaw();
 }
 
 //////////////////////
@@ -60,7 +62,7 @@ function createOrthographicCamera(id,x,y,z) {
 }
 
 function createCameras(){
-    createOrthographicCamera(0,0,6,5);
+    createOrthographicCamera(0,0,5,100); //mudar 4º argumento para dar para ver a lança
     createOrthographicCamera(1,10,6,0);
     createOrthographicCamera(2,0,20,0);
     createOrthographicCamera(3,10,6,10);
@@ -98,11 +100,14 @@ function addCylinder(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, material) {
 }
 
 /* Function that creates a Tetrahedron and positions it in the referencial */
-function addTetrahedron(obj, r, d, ref_x, ref_y, ref_z, material) {
+function addTetrahedron(obj, r, d, ref_x, ref_y, ref_z, material, reversed) {
     'use strict';
     
     geometry = new THREE.TetrahedronGeometry(r, d);
     mesh = new THREE.Mesh(geometry, material);
+    if(reversed) {
+        mesh.rotation.x = Math.PI;
+    }
     mesh.position.set(ref_x, ref_y, ref_z);
     obj.add(mesh);
 }
@@ -113,7 +118,7 @@ function createBase() {
     base = new THREE.Object3D();
 
     material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D});
-    material2 = new THREE.MeshBasicMaterial({ color: 0x000000});
+    material2 = new THREE.MeshBasicMaterial({ color: 0x404040});
     
     addCube(base, 2*c, c, 2*c, 0, 0, 0, material2); // add base
     addCube(base, 1, h, 1, 0, h/2+c/2, 0, material1); // add tower
@@ -131,13 +136,14 @@ function createCrane() {
     crane = new THREE.Object3D();
 
     material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D});
-    material2 = new THREE.MeshBasicMaterial({ color: 0x000000});
+    material2 = new THREE.MeshBasicMaterial({ color: 0x404040});
     material3 = new THREE.MeshBasicMaterial({ color: 0xFF9933});
+    material4 = new THREE.MeshBasicMaterial({ color: 0xFFFFFF});
     
     addCylinder(crane, c, c, c, 50, 0, 0, 0, material2); // axis of rotation
     addCube(crane, c, c, 15*c, 0, c, 3*c, material1); // jib and counterjib
-    addCube(crane, c, c, c, c, c, 0, material3); // cabine
-    addTetrahedron(crane, c, 0, 0, 2*c, 0, material3); // apex
+    addCube(crane, c, c, c, c, c, 0, material4); // cabine
+    addTetrahedron(crane, c, 0, 0, 2*c, 0, material3, false); // apex
     addCube(crane, c/2, 2*c, c, 0, 0, -3*c, material2); // counterweight
     
     scene.add(crane);
@@ -145,6 +151,45 @@ function createCrane() {
     crane.position.x = 0;
     crane.position.y = c+h;
     crane.position.z = 0;
+}
+
+function createCar() {
+    'use strict';
+
+    car = new THREE.Object3D();
+
+    material2 = new THREE.MeshBasicMaterial({ color: 0x404040});
+    material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4});
+
+    addCube(car, c/2, c/2, c, 0, 0, 0, material2); // car
+    addCylinder(car, c/4, c/4, h/2, 50, 0, -((h+c)/4), 0, material5); // steel cable
+
+    scene.add(car);
+
+    car.position.x = 0;
+    car.position.y = (5*c)/4 + h;
+    car.position.z = 10*c;
+}
+
+function createClaw() {
+    'use strict';
+
+    claw = new THREE.Object3D();
+
+    material2 = new THREE.MeshBasicMaterial({ color: 0x404040});
+    material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4});
+
+    addCylinder(claw, c, c, c, 50, 0, 0, 0, material5); // claw block
+    addTetrahedron(claw, c/2, 0, c/2, -3*c/4, 0, material2, true); // claw
+    addTetrahedron(claw, c/2, 0, -c/2, -3*c/4, 0, material2, true); // claw
+    addTetrahedron(claw, c/2, 0, 0, -3*c/4, c/2, material2, true); // claw
+    addTetrahedron(claw, c/2, 0, 0, -3*c/4, -c/2, material2, true); // claw
+
+    scene.add(claw);
+
+    claw.position.x = 0;
+    claw.position.y = h/2 + c/2;
+    claw.position.z = 10*c;
 }
 
 //////////////////////
