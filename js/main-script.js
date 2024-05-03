@@ -9,9 +9,14 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 //////////////////////
 var cameras=new Array(), camera, scene, renderer;
 
-var geometry, material1, material2, material3, material4, material5, mesh;
+var geometry, mesh;
+var material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D}); // gold
+var material2 = new THREE.MeshBasicMaterial({ color: 0x404040}); // grey
+var material3 = new THREE.MeshBasicMaterial({ color: 0xFF9933}); // orange
+var material4 = new THREE.MeshBasicMaterial({ color: 0xFFFFFF}); // white
+var material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4}); // grey steel
 
-var base, crane, car, claw;
+var base, crane, car, claw, container;
 
 var c=1, h=10;
 
@@ -28,6 +33,7 @@ function createScene(){
     createCrane();
     createCar();
     createClaw();
+    createContainer();
 }
 
 //////////////////////
@@ -62,7 +68,7 @@ function createOrthographicCamera(id,x,y,z) {
 }
 
 function createCameras(){
-    createOrthographicCamera(0,0,5,100); //mudar 4º argumento para dar para ver a lança
+    createOrthographicCamera(0,0,6,100); //mudar 4º argumento para dar para ver a lança
     createOrthographicCamera(1,10,6,0);
     createOrthographicCamera(2,0,20,0);
     createOrthographicCamera(3,10,6,10);
@@ -74,6 +80,8 @@ function createCameras(){
 /////////////////////
 /* CREATE LIGHT(S) */
 /////////////////////
+
+// No lights in this project
 
 ////////////////////////
 /* CREATE OBJECT3D(S) */
@@ -99,12 +107,67 @@ function addCylinder(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, material) {
     obj.add(mesh);
 }
 
-/* Function that creates a Tetrahedron and positions it in the referencial */
-function addTetrahedron(obj, r, d, ref_x, ref_y, ref_z, material, reversed) {
+/* IMPLEMENTAR ESTA FUNCAO NO ADDCYLINDER */
+function addCylinderRotation(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, rot_x, rot_y, rot_z, material) {
     'use strict';
     
-    geometry = new THREE.TetrahedronGeometry(r, d);
+    geometry = new THREE.CylinderGeometry(rt, rb, h, rs);
     mesh = new THREE.Mesh(geometry, material);
+    mesh.rotateX(rot_x); mesh.rotateY(rot_y); mesh.rotateZ(rot_z);
+    mesh.position.set(ref_x, ref_y, ref_z);
+    obj.add(mesh);
+}
+
+function addPyramid(obj, ref_x, ref_y, ref_z, material) {
+    'use strict';
+    const geometry = new THREE.BufferGeometry();
+    
+    const vertices = new Float32Array( [
+        -c/2, 0,  c/2,    // v0
+        c/2,0,  c/2,  // v1       v0, v1, v2 - tetrahedron base
+        c/2, 0,  -c/2,   // v2
+        -c/2,  0,  -c/2,      // v3       v3 - tetrahedron top vertice
+        0,  2*c,  0,      // v4
+    ] );
+
+    const indices = [
+        0, 1, 4,
+        1, 2, 4,
+        2, 3, 4,
+        0, 3, 4
+    ];    
+
+    geometry.setIndex( indices );
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    const mesh = new THREE.Mesh( geometry, material );
+    mesh.position.set(ref_x, ref_y, ref_z);
+    obj.add(mesh);
+}
+    
+
+/* Function that creates a Tetrahedron and positions it in the referencial */
+function addTetrahedron(obj, ref_x, ref_y, ref_z, material, reversed) {
+    'use strict';
+    
+    const geometry = new THREE.BufferGeometry();
+    
+    const vertices = new Float32Array( [
+        -c/4, 0,  -c/4,    // v0
+        c/4, 0,  -c/4,      // v1       v0, v1, v2 - tetrahedron base
+        c/4, 0,  c/4,       // v2
+        0,  c,  0,          // v3       v3 - tetrahedron top vertice
+    ] );
+
+    const indices = [
+        2, 1, 0,
+        0, 3, 2,
+        1, 3, 0,
+        2, 3, 1
+    ];    
+
+    geometry.setIndex( indices );
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    const mesh = new THREE.Mesh( geometry, material );
     if(reversed) {
         mesh.rotation.x = Math.PI;
     }
@@ -116,9 +179,6 @@ function createBase() {
     'use strict';
 
     base = new THREE.Object3D();
-
-    material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D});
-    material2 = new THREE.MeshBasicMaterial({ color: 0x404040});
     
     addCube(base, 2*c, c, 2*c, 0, 0, 0, material2); // add base
     addCube(base, 1, h, 1, 0, h/2+c/2, 0, material1); // add tower
@@ -134,17 +194,14 @@ function createCrane() {
     'use strict';
 
     crane = new THREE.Object3D();
-
-    material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D});
-    material2 = new THREE.MeshBasicMaterial({ color: 0x404040});
-    material3 = new THREE.MeshBasicMaterial({ color: 0xFF9933});
-    material4 = new THREE.MeshBasicMaterial({ color: 0xFFFFFF});
     
     addCylinder(crane, c, c, c, 50, 0, 0, 0, material2); // axis of rotation
     addCube(crane, c, c, 15*c, 0, c, 3*c, material1); // jib and counterjib
     addCube(crane, c, c, c, c, c, 0, material4); // cabine
-    addTetrahedron(crane, c, 0, 0, 2*c, 0, material3, false); // apex
+    addPyramid(crane, 0, c, 0, material3); // apex
     addCube(crane, c/2, 2*c, c, 0, 0, -3*c, material2); // counterweight
+    addCylinderRotation(crane, c/20, c/20, h, 50, 0, 4*c/2, 5*c, -1.4, 0, 0, material5) // fore pendant
+    addCylinderRotation(crane, c/20, c/20, h/2-c/2, 50, 0, 4*c/2, -2*c, 1.2, 0, 0, material5) // rear pendant
     
     scene.add(crane);
 
@@ -158,11 +215,8 @@ function createCar() {
 
     car = new THREE.Object3D();
 
-    material2 = new THREE.MeshBasicMaterial({ color: 0x404040});
-    material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4});
-
     addCube(car, c/2, c/2, c, 0, 0, 0, material2); // car
-    addCylinder(car, c/4, c/4, h/2, 50, 0, -((h+c)/4), 0, material5); // steel cable
+    addCylinder(car, c/8, c/8, h/2, 50, 0, -((h+c)/4), 0, material5); // steel cable
 
     scene.add(car);
 
@@ -175,21 +229,38 @@ function createClaw() {
     'use strict';
 
     claw = new THREE.Object3D();
-
-    material2 = new THREE.MeshBasicMaterial({ color: 0x404040});
-    material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4});
+    claw.add(new THREE.AxesHelper(10));
 
     addCylinder(claw, c, c, c, 50, 0, 0, 0, material5); // claw block
-    addTetrahedron(claw, c/2, 0, c/2, -3*c/4, 0, material2, true); // claw
-    addTetrahedron(claw, c/2, 0, -c/2, -3*c/4, 0, material2, true); // claw
-    addTetrahedron(claw, c/2, 0, 0, -3*c/4, c/2, material2, true); // claw
-    addTetrahedron(claw, c/2, 0, 0, -3*c/4, -c/2, material2, true); // claw
+    addTetrahedron(claw, c/2, -c/3, 0, material2, true); // claw
+    addTetrahedron(claw, -c/2, -c/3, 0, material2, true); // claw
+    addTetrahedron(claw, 0, -c/3, c/2, material2, true); // claw          // mudar y
+    addTetrahedron(claw, 0, -c/3, -c/2, material2, true); // claw
 
     scene.add(claw);
 
     claw.position.x = 0;
     claw.position.y = h/2 + c/2;
     claw.position.z = 10*c;
+}
+
+function createContainer(){
+    'use strict';
+
+    container = new THREE.Object3D();
+    
+    addCube(container, 5.5,0,7 , 0,-1,0, material2)
+    addCube(container, 5.5,3,0.2 , 0,0,3.5, material5)
+    addCube(container, 5.5,3,0.2 , 0,0,-3.5, material5)
+    addCube(container, 0.2,3,7 , 2.5,0,0, material5)
+    addCube(container, 0.2,3,7 , -2.5,0,0, material5)
+    scene.add(container);
+    container.position.x = 7;
+    container.position.y = 1;
+    container.position.z = 7;
+    
+    
+    
 }
 
 //////////////////////
@@ -288,12 +359,12 @@ function onKeyDown(e) {
     case 54: //'6'
         //camera = cameras[5];
         break;
-    case 55:
-        scene.traverse(function (node) {
-            if (node instanceof THREE.Mesh) {
-                node.material.wireframe = !node.material.wireframe;
-            }
-        });
+    case 55: //'7'
+        material1.wireframe = !material1.wireframe;
+        material2.wireframe = !material2.wireframe;        
+        material3.wireframe = !material3.wireframe;        
+        material4.wireframe = !material4.wireframe;        
+        material5.wireframe = !material5.wireframe;        
     }
 }
 
