@@ -18,6 +18,8 @@ var material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4}); // grey steel
 
 var base, crane, car, claw, container;
 
+var crane_rot = new THREE.Group();
+
 var c=1, h=10;
 
 /////////////////////
@@ -34,6 +36,10 @@ function createScene(){
     createCar();
     createClaw();
     createContainer();
+    crane_rot.add(crane);
+    crane_rot.add(car);
+    crane_rot.add(claw);
+    scene.add(crane_rot);
 }
 
 //////////////////////
@@ -194,6 +200,8 @@ function createCrane() {
     'use strict';
 
     crane = new THREE.Object3D();
+    crane.add(new THREE.AxesHelper(2));
+    crane.userData = { rot_pos: false, rot_neg: false, step: 0 };
     
     addCylinder(crane, c, c, c, 50, 0, 0, 0, material2); // axis of rotation
     addCube(crane, c, c, 15*c, 0, c, 3*c, material1); // jib and counterjib
@@ -202,8 +210,6 @@ function createCrane() {
     addCube(crane, c/2, 2*c, c, 0, 0, -3*c, material2); // counterweight
     addCylinderRotation(crane, c/20, c/20, h, 50, 0, 4*c/2, 5*c, -1.4, 0, 0, material5) // fore pendant
     addCylinderRotation(crane, c/20, c/20, h/2-c/2, 50, 0, 4*c/2, -2*c, 1.2, 0, 0, material5) // rear pendant
-    
-    scene.add(crane);
 
     crane.position.x = 0;
     crane.position.y = c+h;
@@ -214,11 +220,11 @@ function createCar() {
     'use strict';
 
     car = new THREE.Object3D();
+    car.add(new THREE.AxesHelper(2));
+    car.userData = { forward: false, backwards: false, step: 0 };
 
-    addCube(car, c/2, c/2, c, 0, 0, 0, material2); // car
+    addCube(car, c/2, c/2, c, 0, 0, 0, material5); // car
     addCylinder(car, c/8, c/8, h/2, 50, 0, -((h+c)/4), 0, material5); // steel cable
-
-    scene.add(car);
 
     car.position.x = 0;
     car.position.y = (5*c)/4 + h;
@@ -229,15 +235,13 @@ function createClaw() {
     'use strict';
 
     claw = new THREE.Object3D();
-    claw.add(new THREE.AxesHelper(10));
+    claw.add(new THREE.AxesHelper(2));
 
     addCylinder(claw, c, c, c, 50, 0, 0, 0, material5); // claw block
     addTetrahedron(claw, c/2, -c/3, 0, material2, true); // claw
     addTetrahedron(claw, -c/2, -c/3, 0, material2, true); // claw
     addTetrahedron(claw, 0, -c/3, c/2, material2, true); // claw          // mudar y
     addTetrahedron(claw, 0, -c/3, -c/2, material2, true); // claw
-
-    scene.add(claw);
 
     claw.position.x = 0;
     claw.position.y = h/2 + c/2;
@@ -258,9 +262,6 @@ function createContainer(){
     container.position.x = 7;
     container.position.y = 1;
     container.position.z = 7;
-    
-    
-    
 }
 
 //////////////////////
@@ -284,6 +285,15 @@ function handleCollisions(){
 ////////////
 function update(){
     'use strict';
+    
+    if (crane.userData.rot_pos) {
+        crane.userData.step = +0.01;
+        crane_rot.rotateY(crane.userData.step);
+    }
+    if (crane.userData.rot_neg) {
+        crane.userData.step = -0.01;
+        crane_rot.rotateY(crane.userData.step);
+    }
 
 }
 
@@ -310,6 +320,8 @@ function init() {
     createCameras();
 
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+
 }
 
 /////////////////////
@@ -317,6 +329,7 @@ function init() {
 /////////////////////
 function animate() {
     'use strict';
+    update();
     render();
 
     requestAnimationFrame(animate);
@@ -365,6 +378,17 @@ function onKeyDown(e) {
         material3.wireframe = !material3.wireframe;        
         material4.wireframe = !material4.wireframe;        
         material5.wireframe = !material5.wireframe;        
+        break;
+    case 65: //'q'
+        crane.userData.rot_neg = true; 
+        break;
+    case 81: //'a'
+        crane.userData.rot_pos = true;        
+        break;
+    case 87: //'w'
+        break;
+    case 83: //'s'
+        break;
     }
 }
 
@@ -373,6 +397,19 @@ function onKeyDown(e) {
 ///////////////////////
 function onKeyUp(e){
     'use strict';
+
+    switch (e.keyCode) {
+    case 65: //'q'
+        crane.userData.rot_neg = false;        
+        break;
+    case 81: //'a'
+        crane.userData.rot_pos = false;        
+        break;
+    case 87: //'w'
+        break;
+    case 83: //'s'
+        break;
+    }
 }
 
 init();
