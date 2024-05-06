@@ -18,8 +18,6 @@ var material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4}); // grey steel
 
 var base, crane, car, claw, container;
 
-var crane_rot = new THREE.Group();
-
 var c=1, h=10;
 
 /////////////////////
@@ -32,14 +30,8 @@ function createScene(){
     scene.background = color;
     scene.add(new THREE.AxesHelper(10));
     createBase();
-    createCrane();
-    createCar();
-    createClaw();
+    scene.add(base);
     createContainer();
-    crane_rot.add(crane);
-    crane_rot.add(car);
-    crane_rot.add(claw);
-    scene.add(crane_rot);
 }
 
 //////////////////////
@@ -189,7 +181,7 @@ function createBase() {
     addCube(base, 2*c, c, 2*c, 0, 0, 0, material2); // add base
     addCube(base, 1, h, 1, 0, h/2+c/2, 0, material1); // add tower
 
-    scene.add(base);
+    createCrane(base);
 
     base.position.x = 0;
     base.position.y = 0;
@@ -210,10 +202,14 @@ function createCrane() {
     addCube(crane, c/2, 2*c, c, 0, 0, -3*c, material2); // counterweight
     addCylinderRotation(crane, c/20, c/20, h, 50, 0, 4*c/2, 5*c, -1.4, 0, 0, material5) // fore pendant
     addCylinderRotation(crane, c/20, c/20, h/2-c/2, 50, 0, 4*c/2, -2*c, 1.2, 0, 0, material5) // rear pendant
+    
+    createCar();
+    base.add(crane);
 
     crane.position.x = 0;
     crane.position.y = c+h;
     crane.position.z = 0;
+
 }
 
 function createCar() {
@@ -221,13 +217,16 @@ function createCar() {
 
     car = new THREE.Object3D();
     car.add(new THREE.AxesHelper(2));
-    car.userData = { forward: false, backwards: false, step: 0 };
+    car.userData = { forwards: false, backwards: false, step: 0 };
 
     addCube(car, c/2, c/2, c, 0, 0, 0, material5); // car
     addCylinder(car, c/8, c/8, h/2, 50, 0, -((h+c)/4), 0, material5); // steel cable
-
+    
+    createClaw(car);
+    crane.add(car);
+    
     car.position.x = 0;
-    car.position.y = (5*c)/4 + h;
+    car.position.y = c/4;
     car.position.z = 10*c;
 }
 
@@ -242,10 +241,12 @@ function createClaw() {
     addTetrahedron(claw, -c/2, -c/3, 0, material2, true); // claw
     addTetrahedron(claw, 0, -c/3, c/2, material2, true); // claw          // mudar y
     addTetrahedron(claw, 0, -c/3, -c/2, material2, true); // claw
-
+    
     claw.position.x = 0;
-    claw.position.y = h/2 + c/2;
-    claw.position.z = 10*c;
+    claw.position.y = -h/2;
+    claw.position.z = 0;
+
+    car.add(claw);
 }
 
 function createContainer(){
@@ -287,12 +288,16 @@ function update(){
     'use strict';
     
     if (crane.userData.rot_pos) {
-        crane.userData.step = +0.01;
-        crane_rot.rotateY(crane.userData.step);
+        crane.rotateY(0.01);
     }
     if (crane.userData.rot_neg) {
-        crane.userData.step = -0.01;
-        crane_rot.rotateY(crane.userData.step);
+        crane.rotateY(-0.01);
+    }
+    if (car.userData.forwards && car.position.z < 10) {
+        car.position.z += 0.1;
+    }
+    if (car.userData.backwards && car.position.z > 2) {
+        car.position.z -= 0.1;
     }
 
 }
@@ -380,14 +385,16 @@ function onKeyDown(e) {
         material5.wireframe = !material5.wireframe;        
         break;
     case 65: //'q'
-        crane.userData.rot_neg = true; 
+        crane.userData.rot_neg = true;
         break;
     case 81: //'a'
-        crane.userData.rot_pos = true;        
+        crane.userData.rot_pos = true;
         break;
     case 87: //'w'
+        car.userData.forwards = true;
         break;
     case 83: //'s'
+        car.userData.backwards = true;
         break;
     }
 }
@@ -406,8 +413,10 @@ function onKeyUp(e){
         crane.userData.rot_pos = false;        
         break;
     case 87: //'w'
+        car.userData.forwards = false;
         break;
     case 83: //'s'
+        car.userData.backwards = false;
         break;
     }
 }
