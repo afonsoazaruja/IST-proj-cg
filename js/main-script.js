@@ -16,7 +16,7 @@ var material3 = new THREE.MeshBasicMaterial({ color: 0xFF9933}); // orange
 var material4 = new THREE.MeshBasicMaterial({ color: 0xFFFFFF}); // white
 var material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4}); // grey steel
 
-var base, crane, car, claw, container;
+var base, crane, car, claw, container, objects= new Array();
 
 var c=1, h=10;
 
@@ -32,6 +32,7 @@ function createScene(){
     createBase();
     scene.add(base);
     createContainer();
+    createObjects();
 }
 
 //////////////////////
@@ -66,13 +67,16 @@ function createOrthographicCamera(id,x,y,z) {
 }
 
 function createCameras(){
-    createOrthographicCamera(0,0,6,100); //mudar 4º argumento para dar para ver a lança
+    createOrthographicCamera(0,0,6,100);
     createOrthographicCamera(1,100,6,0);
-    createOrthographicCamera(2,0,100,0);
+    createOrthographicCamera(2,0,40,0);
     createOrthographicCamera(3,10,6,10);
     createPersepectiveCamera(4,15,15,15);
+    createPersepectiveCamera(5,0,-1,0);
+    cameras[5].lookAt(0,10,0);
+    cameras[5].rotation.x = -Math.PI/2;
+    claw.add(cameras[5]); // para movimentacao da camara em relacao a grua
     camera = cameras[0];
-
 }
 
 /////////////////////
@@ -96,24 +100,14 @@ function addCube(obj, x, y, z, ref_x, ref_y, ref_z, material) {
 }
 
 /* Function that creates a cilinder and positions it in the referencial */
-function addCylinder(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, material, name) {
-    'use strict';
-    
-    geometry = new THREE.CylinderGeometry(rt, rb, h, rs);
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(ref_x, ref_y, ref_z);
-    if (name != null) mesh.name = name;
-    obj.add(mesh);
-}
-
-/* IMPLEMENTAR ESTA FUNCAO NO ADDCYLINDER */
-function addCylinderRotation(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, rot_x, rot_y, rot_z, material) {
+function addCylinder(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, rot_x, rot_y, rot_z, material, name) {
     'use strict';
     
     geometry = new THREE.CylinderGeometry(rt, rb, h, rs);
     mesh = new THREE.Mesh(geometry, material);
     mesh.rotateX(rot_x); mesh.rotateY(rot_y); mesh.rotateZ(rot_z);
     mesh.position.set(ref_x, ref_y, ref_z);
+    if (name != null) mesh.name = name;
     obj.add(mesh);
 }
 
@@ -121,23 +115,26 @@ function addPyramid(obj, ref_x, ref_y, ref_z, material) {
     'use strict';
     const geometry = new THREE.BufferGeometry();
     
-    const vertices = new Float32Array( [
-        -c/2, 0,  c/2,    // v0
-        c/2,0,  c/2,  // v1       v0, v1, v2 - tetrahedron base
-        c/2, 0,  -c/2,   // v2
-        -c/2,  0,  -c/2,      // v3       v3 - tetrahedron top vertice
-        0,  2*c,  0,      // v4
-    ] );
+    const vertices = new Float32Array([
+        -c/2, 0, -c/2,   // Base vertices
+        c/2, 0, -c/2,
+        c/2, 0, c/2,    
+        -c/2, 0, c/2,
+        0, 2*c, 0           // Apex
+    ]);
 
-    const indices = [
-        0, 1, 4,
+    const indices = new Uint32Array([
+        0, 1, 4,  // Base indices
         1, 2, 4,
         2, 3, 4,
-        0, 3, 4
-    ];    
+        3, 0, 4,
+        1, 0, 3,  // Side indices
+        2, 1, 3
+    ]);
 
-    geometry.setIndex( indices );
-    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+
     const mesh = new THREE.Mesh( geometry, material );
     mesh.position.set(ref_x, ref_y, ref_z);
     obj.add(mesh);
@@ -145,13 +142,13 @@ function addPyramid(obj, ref_x, ref_y, ref_z, material) {
     
 
 /* Function that creates a Tetrahedron and positions it in the referencial */
-function addTetrahedron(obj, ref_x, ref_y, ref_z, material, reversed) {
+function addTetrahedron(obj, ref_x, ref_y, ref_z, material, reversed, name) {
     'use strict';
     
     const geometry = new THREE.BufferGeometry();
     
     const vertices = new Float32Array( [
-        -c/4, 0,  -c/4,    // v0
+        -c/4, 0,  -c/4,     // v0
         c/4, 0,  -c/4,      // v1       v0, v1, v2 - tetrahedron base
         c/4, 0,  c/4,       // v2
         0,  c,  0,          // v3       v3 - tetrahedron top vertice
@@ -166,11 +163,12 @@ function addTetrahedron(obj, ref_x, ref_y, ref_z, material, reversed) {
 
     geometry.setIndex( indices );
     geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
-    const mesh = new THREE.Mesh( geometry, material );
+    mesh = new THREE.Mesh( geometry, material );
     if(reversed) {
         mesh.rotation.x = Math.PI;
     }
     mesh.position.set(ref_x, ref_y, ref_z);
+    if (name != null) mesh.name = name;
     obj.add(mesh);
 }
 
@@ -196,13 +194,13 @@ function createCrane() {
     crane.add(new THREE.AxesHelper(2));
     crane.userData = { rot_pos: false, rot_neg: false, step: 0 };
     
-    addCylinder(crane, c, c, c, 50, 0, 0, 0, material2, null); // axis of rotation
+    addCylinder(crane, c, c, c, 50, 0, 0, 0, 0, 0, 0, material2, null); // axis of rotation
     addCube(crane, c, c, 15*c, 0, c, 3*c, material1); // jib and counterjib
     addCube(crane, c, c, c, c, c, 0, material4); // cabine
     addPyramid(crane, 0, c, 0, material3); // apex
     addCube(crane, c/2, 2*c, c, 0, 0, -3*c, material2); // counterweight
-    addCylinderRotation(crane, c/20, c/20, c*10, 50, 0, 4*c/2, 5*c, -1.4, 0, 0, material5) // fore pendant
-    addCylinderRotation(crane, c/20, c/20, c*5-c/2, 50, 0, 4*c/2, -2*c, 1.2, 0, 0, material5) // rear pendant
+    addCylinder(crane, c/20, c/20, c*10.05, 50, 0, 4*c/2, 5*c, -1.39, 0, 0, material5) // fore pendant
+    addCylinder(crane, c/20, c/20, c*5-c/2, 50, 0, 4*c/2, -2*c, 1.15, 0, 0,  material5) // rear pendant
     
     createCar();
     base.add(crane);
@@ -221,7 +219,7 @@ function createCar() {
     car.userData = { forwards: false, backwards: false, step: 0 };
     
     addCube(car, c/2, c/2, c, 0, 0, 0, material5); // car
-    addCylinder(car, c/8, c/8, 5*c, 50, 0, -((h+c)/4), 0, material5, "cable"); // steel cable
+    addCylinder(car, c/8, c/8, 5*c, 50, 0, -((h+c)/4), 0, 0, 0, 0, material5, "cable"); // steel cable
     
     createClaw(car);
     crane.add(car);
@@ -236,13 +234,13 @@ function createClaw() {
 
     claw = new THREE.Object3D();
     claw.add(new THREE.AxesHelper(2));
-    car.userData = { up: false, down: false, step: 0 };
+    claw.userData = { up: false, down: false, rotateIn: false, rotateOut: false, step: 0 };
 
-    addCylinder(claw, c, c, c, 50, 0, 0, 0, material5, null); // claw block
-    addTetrahedron(claw, c/2, -c/3, 0, material2, true); // claw
-    addTetrahedron(claw, -c/2, -c/3, 0, material2, true); // claw
-    addTetrahedron(claw, 0, -c/3, c/2, material2, true); // claw          // mudar y
-    addTetrahedron(claw, 0, -c/3, -c/2, material2, true); // claw
+    addCylinder(claw, c, c, c, 50, 0, 0, 0, 0, 0, 0, material5, null); // claw block
+    addTetrahedron(claw, c/2, -c/3, 0, material2, true, "claw1"); // claw
+    addTetrahedron(claw, -c/2, -c/3, 0, material2, true, "claw2"); // claw
+    addTetrahedron(claw, 0, -c/3, c/2, material2, true, "claw3"); // claw
+    addTetrahedron(claw, 0, -c/3, -c/2, material2, true, "claw4"); // claw
     
     claw.position.x = 0;
     claw.position.y = -h/2;
@@ -256,15 +254,66 @@ function createContainer(){
 
     container = new THREE.Object3D();
     
-    addCube(container, 5.5,0,7 , 0,-1,0, material2)
-    addCube(container, 5.5,3,0.2 , 0,0,3.5, material5)
-    addCube(container, 5.5,3,0.2 , 0,0,-3.5, material5)
-    addCube(container, 0.2,3,7 , 2.5,0,0, material5)
-    addCube(container, 0.2,3,7 , -2.5,0,0, material5)
+    addCube(container, 5.5,0,7 , 0,-1.5,0, material2)
+    addCube(container, 5.5,1.5,0.2 , 0,-0.8,3.5, material5)
+    addCube(container, 5.5,1.5,0.2 , 0,-0.8,-3.5, material5)
+    addCube(container, 0.2,1.5,7 , 2.7,-0.8,0, material5)
+    addCube(container, 0.2,1.5,7 , -2.7,-0.8,0, material5)
     scene.add(container);
     container.position.x = 7;
     container.position.y = 1;
     container.position.z = 7;
+}
+
+function createObjects(){
+    'use strict';
+    
+    for (let i = 0; i < 5; i++) {
+        objects[i] = new THREE.Object3D();
+        scene.add(objects[i]);
+    }
+    addCube(objects[0], 1, 1, 1, 0, 0, 0, material1);
+    
+    geometry = new THREE.DodecahedronGeometry(1);
+    mesh = new THREE.Mesh(geometry, material2);
+    mesh.position.set(0, 0, 0);
+    objects[1].add(mesh);
+
+    geometry = new THREE.IcosahedronGeometry(1);
+    mesh = new THREE.Mesh(geometry, material3);
+    mesh.position.set(0, 0, 0);
+    objects[2].add(mesh);
+
+    geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);
+    mesh = new THREE.Mesh(geometry, material4);
+    mesh.position.set(0, 0, 0);
+    objects[3].add(mesh);
+
+    geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);
+    mesh = new THREE.Mesh(geometry, material5);
+    mesh.position.set(0, 0, 0);
+    objects[4].add(mesh);
+
+    objects[0].position.x = -5;
+    objects[0].position.y = 0;
+    objects[0].position.z = 4;
+
+    objects[1].position.x = -3;
+    objects[1].position.y = 0;
+    objects[1].position.z = -4;
+
+    objects[2].position.x = -7;
+    objects[2].position.y = 0;
+    objects[2].position.z = 10;
+
+    objects[3].position.x = 1;
+    objects[3].position.y = 0;
+    objects[3].position.z = -7;
+
+    objects[4].position.x = 5;
+    objects[4].position.y = 0;
+    objects[4].position.z = 2;
+    
 }
 
 //////////////////////
@@ -316,6 +365,38 @@ function update(){
             if (element.name == "cable") {
                 element.scale.y += 0.01;
                 element.position.y -= 0.025
+            }
+        });
+    }
+    if (claw.userData.rotateIn) {
+        claw.children.forEach(element => {
+            if (element.name == "claw1") {
+                element.rotateZ(-0.01);
+            }
+            if (element.name == "claw2") {
+                element.rotateZ(0.01);
+            }
+            if (element.name == "claw3") {
+                element.rotateX(-0.01);
+            }
+            if (element.name == "claw4") {
+                element.rotateX(0.01);
+            }
+        });
+    }
+    if (claw.userData.rotateIn) {
+        claw.children.forEach(element => {
+            if (element.name == "claw1") {
+                element.rotateZ(0.01);
+            }
+            if (element.name == "claw2") {
+                element.rotateZ(-0.01);
+            }
+            if (element.name == "claw3") {
+                element.rotateX(0.01);
+            }
+            if (element.name == "claw4") {
+                element.rotateX(-0.01);
             }
         });
     }
@@ -395,7 +476,7 @@ function onKeyDown(e) {
         camera = cameras[4];
         break;
     case 54: //'6'
-        //camera = cameras[5];
+        camera = cameras[5];
         break;
     case 55: //'7'
         material1.wireframe = !material1.wireframe;
@@ -421,6 +502,12 @@ function onKeyDown(e) {
         break;
     case 68: //'d'
         claw.userData.down = true;
+        break;
+    case 82: //'r'
+        claw.userData.rotateIn = true;
+        break;
+    case 70: //'f'
+        claw.userData.rotateOut = true;
         break;
     }
 }
@@ -450,7 +537,14 @@ function onKeyUp(e){
     case 68: //'d'
         claw.userData.down = false;
         break;
+    case 82: //'r'
+        claw.userData.rotateIn = false;
+        break;
+    case 70: //'f'
+        claw.userData.rotateOut = false;
+        break;
     }
+
 }
 
 init();
