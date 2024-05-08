@@ -67,8 +67,8 @@ function createOrthographicCamera(id,x,y,z) {
 
 function createCameras(){
     createOrthographicCamera(0,0,6,100); //mudar 4º argumento para dar para ver a lança
-    createOrthographicCamera(1,10,6,0);
-    createOrthographicCamera(2,0,20,0);
+    createOrthographicCamera(1,100,6,0);
+    createOrthographicCamera(2,0,100,0);
     createOrthographicCamera(3,10,6,10);
     createPersepectiveCamera(4,15,15,15);
     camera = cameras[0];
@@ -96,12 +96,13 @@ function addCube(obj, x, y, z, ref_x, ref_y, ref_z, material) {
 }
 
 /* Function that creates a cilinder and positions it in the referencial */
-function addCylinder(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, material) {
+function addCylinder(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, material, name) {
     'use strict';
     
     geometry = new THREE.CylinderGeometry(rt, rb, h, rs);
     mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(ref_x, ref_y, ref_z);
+    if (name != null) mesh.name = name;
     obj.add(mesh);
 }
 
@@ -195,13 +196,13 @@ function createCrane() {
     crane.add(new THREE.AxesHelper(2));
     crane.userData = { rot_pos: false, rot_neg: false, step: 0 };
     
-    addCylinder(crane, c, c, c, 50, 0, 0, 0, material2); // axis of rotation
+    addCylinder(crane, c, c, c, 50, 0, 0, 0, material2, null); // axis of rotation
     addCube(crane, c, c, 15*c, 0, c, 3*c, material1); // jib and counterjib
     addCube(crane, c, c, c, c, c, 0, material4); // cabine
     addPyramid(crane, 0, c, 0, material3); // apex
     addCube(crane, c/2, 2*c, c, 0, 0, -3*c, material2); // counterweight
-    addCylinderRotation(crane, c/20, c/20, h, 50, 0, 4*c/2, 5*c, -1.4, 0, 0, material5) // fore pendant
-    addCylinderRotation(crane, c/20, c/20, h/2-c/2, 50, 0, 4*c/2, -2*c, 1.2, 0, 0, material5) // rear pendant
+    addCylinderRotation(crane, c/20, c/20, c*10, 50, 0, 4*c/2, 5*c, -1.4, 0, 0, material5) // fore pendant
+    addCylinderRotation(crane, c/20, c/20, c*5-c/2, 50, 0, 4*c/2, -2*c, 1.2, 0, 0, material5) // rear pendant
     
     createCar();
     base.add(crane);
@@ -218,9 +219,9 @@ function createCar() {
     car = new THREE.Object3D();
     car.add(new THREE.AxesHelper(2));
     car.userData = { forwards: false, backwards: false, step: 0 };
-
+    
     addCube(car, c/2, c/2, c, 0, 0, 0, material5); // car
-    addCylinder(car, c/8, c/8, h/2, 50, 0, -((h+c)/4), 0, material5); // steel cable
+    addCylinder(car, c/8, c/8, 5*c, 50, 0, -((h+c)/4), 0, material5, "cable"); // steel cable
     
     createClaw(car);
     crane.add(car);
@@ -235,8 +236,9 @@ function createClaw() {
 
     claw = new THREE.Object3D();
     claw.add(new THREE.AxesHelper(2));
+    car.userData = { up: false, down: false, step: 0 };
 
-    addCylinder(claw, c, c, c, 50, 0, 0, 0, material5); // claw block
+    addCylinder(claw, c, c, c, 50, 0, 0, 0, material5, null); // claw block
     addTetrahedron(claw, c/2, -c/3, 0, material2, true); // claw
     addTetrahedron(claw, -c/2, -c/3, 0, material2, true); // claw
     addTetrahedron(claw, 0, -c/3, c/2, material2, true); // claw          // mudar y
@@ -298,6 +300,24 @@ function update(){
     }
     if (car.userData.backwards && car.position.z > 2) {
         car.position.z -= 0.1;
+    }
+    if (claw.userData.up && claw.position.y < -1) {
+        claw.position.y += 0.05;
+        car.children.forEach(element => {
+            if (element.name == "cable") {
+                element.scale.y -= 0.01;
+                element.position.y += 0.025
+            }
+        });
+    }
+    if (claw.userData.down && claw.position.y > -10) {
+        claw.position.y -= 0.05;
+        car.children.forEach(element => {
+            if (element.name == "cable") {
+                element.scale.y += 0.01;
+                element.position.y -= 0.025
+            }
+        });
     }
 
 }
@@ -396,6 +416,12 @@ function onKeyDown(e) {
     case 83: //'s'
         car.userData.backwards = true;
         break;
+    case 69: //'e'
+        claw.userData.up = true;
+        break;
+    case 68: //'d'
+        claw.userData.down = true;
+        break;
     }
 }
 
@@ -417,6 +443,12 @@ function onKeyUp(e){
         break;
     case 83: //'s'
         car.userData.backwards = false;
+        break;
+    case 69: //'e'
+        claw.userData.up = false;
+        break;
+    case 68: //'d'
+        claw.userData.down = false;
         break;
     }
 }
