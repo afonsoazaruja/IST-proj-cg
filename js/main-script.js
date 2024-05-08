@@ -20,6 +20,8 @@ var base, crane, car, claw, container, objects= new Array();
 
 var c=1, h=10;
 
+var claw_rotation = 0;
+
 /////////////////////
 /* CREATE SCENE(S) */
 /////////////////////
@@ -69,10 +71,10 @@ function createOrthographicCamera(id,x,y,z) {
 function createCameras(){
     createOrthographicCamera(0,0,6,100);
     createOrthographicCamera(1,100,6,0);
-    createOrthographicCamera(2,0,40,0);
+    createOrthographicCamera(2,0,50,0);
     createOrthographicCamera(3,10,6,10);
     createPersepectiveCamera(4,15,15,15);
-    createPersepectiveCamera(5,0,-1,0);
+    createPersepectiveCamera(5,0,0,0);
     cameras[5].lookAt(0,10,0);
     cameras[5].rotation.x = -Math.PI/2;
     claw.add(cameras[5]); // para movimentacao da camara em relacao a grua
@@ -120,16 +122,16 @@ function addPyramid(obj, ref_x, ref_y, ref_z, material) {
         c/2, 0, -c/2,
         c/2, 0, c/2,    
         -c/2, 0, c/2,
-        0, 2*c, 0           // Apex
+        0, 2*c, 0        // Apex
     ]);
 
     const indices = new Uint32Array([
-        0, 1, 4,  // Base indices
-        1, 2, 4,
-        2, 3, 4,
-        3, 0, 4,
-        1, 0, 3,  // Side indices
-        2, 1, 3
+        3, 2, 1,  // Base triangle
+        3, 1, 0,  // Base triangle
+        4, 1, 0,  // Side triangles
+        4, 2, 1,
+        4, 3, 2,
+        4, 0, 3
     ]);
 
     geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -147,22 +149,26 @@ function addTetrahedron(obj, ref_x, ref_y, ref_z, material, reversed, name) {
     
     const geometry = new THREE.BufferGeometry();
     
-    const vertices = new Float32Array( [
-        -c/4, 0,  -c/4,     // v0
-        c/4, 0,  -c/4,      // v1       v0, v1, v2 - tetrahedron base
-        c/4, 0,  c/4,       // v2
-        0,  c,  0,          // v3       v3 - tetrahedron top vertice
-    ] );
+    const vertices = [
+        // Base triangle
+        0, 0, -c/4,              // Vertex 0
+        -c/4, 0, c/4,      // Vertex 1
+        c/4, 0, c/4,       // Vertex 2
+        // Apex
+        0, c, 0                         // Vertex 3
+    ];
 
     const indices = [
-        2, 1, 0,
-        0, 3, 2,
-        1, 3, 0,
-        2, 3, 1
-    ];    
+        // Base triangle
+        0, 1, 2,
+        // Side triangles
+        0, 2, 3,
+        2, 1, 3,
+        1, 0, 3
+    ];
 
-    geometry.setIndex( indices );
-    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
     mesh = new THREE.Mesh( geometry, material );
     if(reversed) {
         mesh.rotation.x = Math.PI;
@@ -234,17 +240,18 @@ function createClaw() {
 
     claw = new THREE.Object3D();
     claw.add(new THREE.AxesHelper(2));
-    claw.userData = { up: false, down: false, rotateIn: false, rotateOut: false, step: 0 };
+    claw.userData = { up: false, down: false, rotateIn: false, rotateOut: false, rotation: 0.0, step: 0 };
 
     addCylinder(claw, c, c, c, 50, 0, 0, 0, 0, 0, 0, material5, null); // claw block
-    addTetrahedron(claw, c/2, -c/3, 0, material2, true, "claw1"); // claw
-    addTetrahedron(claw, -c/2, -c/3, 0, material2, true, "claw2"); // claw
-    addTetrahedron(claw, 0, -c/3, c/2, material2, true, "claw3"); // claw
-    addTetrahedron(claw, 0, -c/3, -c/2, material2, true, "claw4"); // claw
+    addTetrahedron(claw, 2*c/3, -c/3, 0, material2, true, "claw1"); // claw
+    addTetrahedron(claw, -2*c/3, -c/3, 0, material2, true, "claw2"); // claw
+    addTetrahedron(claw, 0, -c/3, 2*c/3, material2, true, "claw3"); // claw
+    addTetrahedron(claw, 0, -c/3, -2*c/3, material2, true, "claw4"); // claw
     
     claw.position.x = 0;
     claw.position.y = -h/2;
     claw.position.z = 0;
+    claw.radius=1;
 
     car.add(claw);
 }
@@ -255,13 +262,13 @@ function createContainer(){
     container = new THREE.Object3D();
     
     addCube(container, 5.5,0,7 , 0,-1.5,0, material2)
-    addCube(container, 5.5,1.5,0.2 , 0,-0.8,3.5, material5)
-    addCube(container, 5.5,1.5,0.2 , 0,-0.8,-3.5, material5)
-    addCube(container, 0.2,1.5,7 , 2.7,-0.8,0, material5)
-    addCube(container, 0.2,1.5,7 , -2.7,-0.8,0, material5)
+    addCube(container, 5.5,2.5,0.2 , 0,-0.8,3.5, material5)
+    addCube(container, 5.5,2.5,0.2 , 0,-0.8,-3.5, material5)
+    addCube(container, 0.2,2.5,7 , 2.7,-0.8,0, material5)
+    addCube(container, 0.2,2.5,7 , -2.7,-0.8,0, material5)
     scene.add(container);
     container.position.x = 7;
-    container.position.y = 1;
+    container.position.y = 1.5;
     container.position.z = 7;
 }
 
@@ -273,45 +280,50 @@ function createObjects(){
         scene.add(objects[i]);
     }
     addCube(objects[0], 1, 1, 1, 0, 0, 0, material1);
+    objects[0].radius = Math.sqrt(3)/2;
     
     geometry = new THREE.DodecahedronGeometry(1);
     mesh = new THREE.Mesh(geometry, material2);
     mesh.position.set(0, 0, 0);
     objects[1].add(mesh);
+    objects[1].radius = 1;
 
     geometry = new THREE.IcosahedronGeometry(1);
     mesh = new THREE.Mesh(geometry, material3);
     mesh.position.set(0, 0, 0);
     objects[2].add(mesh);
+    objects[2].radius = 1;
 
     geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);
     mesh = new THREE.Mesh(geometry, material4);
     mesh.position.set(0, 0, 0);
     objects[3].add(mesh);
+    objects[3].radius = 1;
 
     geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);
     mesh = new THREE.Mesh(geometry, material5);
     mesh.position.set(0, 0, 0);
     objects[4].add(mesh);
+    objects[4].radius = 1;
 
     objects[0].position.x = -5;
     objects[0].position.y = 0;
     objects[0].position.z = 4;
 
     objects[1].position.x = -3;
-    objects[1].position.y = 0;
+    objects[1].position.y = 0.5;
     objects[1].position.z = -4;
 
     objects[2].position.x = -7;
-    objects[2].position.y = 0;
-    objects[2].position.z = 10;
+    objects[2].position.y = 0.3;
+    objects[2].position.z = 7;
 
     objects[3].position.x = 1;
-    objects[3].position.y = 0;
+    objects[3].position.y = 0.2;
     objects[3].position.z = -7;
 
     objects[4].position.x = 5;
-    objects[4].position.y = 0;
+    objects[4].position.y = 0.5;
     objects[4].position.z = 2;
     
 }
@@ -319,9 +331,27 @@ function createObjects(){
 //////////////////////
 /* CHECK COLLISIONS */
 //////////////////////
+
 function checkCollisions(){
     'use strict';
+    var vectorClaw= new THREE.Vector3();
+    claw.getWorldPosition(vectorClaw)
+    var vectorObject= new THREE.Vector3();
+    for (let i = 0; i < 5; i++) {
+        objects[i].getWorldPosition(vectorObject)
 
+        // Calculate the distance between the centers of the spheres
+        const dx = vectorClaw.x - vectorObject.x;
+        const dy = vectorClaw.y - vectorObject.y;
+        const dz = vectorClaw.z - vectorObject.z;
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+
+        // Check if the distance is less than the sum of the radius
+        if (distance < claw.radius + objects[i].radius){
+            console.log("Collision detected");
+        }
+    }
 }
 
 ///////////////////////
@@ -368,23 +398,7 @@ function update(){
             }
         });
     }
-    if (claw.userData.rotateIn) {
-        claw.children.forEach(element => {
-            if (element.name == "claw1") {
-                element.rotateZ(-0.01);
-            }
-            if (element.name == "claw2") {
-                element.rotateZ(0.01);
-            }
-            if (element.name == "claw3") {
-                element.rotateX(-0.01);
-            }
-            if (element.name == "claw4") {
-                element.rotateX(0.01);
-            }
-        });
-    }
-    if (claw.userData.rotateIn) {
+    if (claw.userData.rotateIn && claw_rotation < 3*c) {
         claw.children.forEach(element => {
             if (element.name == "claw1") {
                 element.rotateZ(0.01);
@@ -398,8 +412,27 @@ function update(){
             if (element.name == "claw4") {
                 element.rotateX(-0.01);
             }
+            claw_rotation += 0.01;
         });
     }
+    if (claw.userData.rotateOut && claw_rotation > -4*c) {
+        claw.children.forEach(element => {
+            if (element.name == "claw1") {
+                element.rotateZ(-0.01);
+            }
+            if (element.name == "claw2") {
+                element.rotateZ(0.01);
+            }
+            if (element.name == "claw3") {
+                element.rotateX(-0.01);
+            }
+            if (element.name == "claw4") {
+                element.rotateX(0.01);
+            }
+            claw_rotation -= 0.01;
+        });
+    }
+    checkCollisions();
 
 }
 
