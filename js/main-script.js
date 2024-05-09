@@ -380,12 +380,26 @@ function checkCollisions(){
             }else{
                 collision.rotation = true;
             }
+            cancelAnimation();
         }
-        if (collision[0])
+        if (collision.action)
             break;
     }
 
 }
+
+function cancelAnimation(){
+    'use strict';
+    crane.userData.rot_pos = false;
+    crane.userData.rot_neg = false;
+    car.userData.forwards = false;
+    car.userData.backwards = false;
+    claw.userData.up = false;
+    claw.userData.down = false;
+    claw.userData.rotateIn = false;
+    claw.userData.rotateOut = false;
+}
+
 
 ///////////////////////
 /* HANDLE COLLISIONS */
@@ -411,7 +425,6 @@ function update(){
     'use strict';
     
     var delta = clock.getDelta();
-
     if (crane.userData.rot_pos) {
         posRotation.innerHTML = '<b>Crane Positive Rotation (Q)</b>';
         crane.rotateY(-0.3 * delta);
@@ -706,36 +719,28 @@ function onKeyUp(e){
 
     switch (e.keyCode) {
     case 81: //'q'
-        if(!collision.action)
-            crane.userData.rot_neg = false;        
+        crane.userData.rot_neg = false;        
         break;
     case 65: //'a'
-        if(!collision.action)
-            crane.userData.rot_pos = false;        
+        crane.userData.rot_pos = false;        
         break;
     case 87: //'w'
-        if(!collision.action)
-            car.userData.forwards = false;
+        car.userData.forwards = false;
         break;
     case 83: //'s'
-        if(!collision.action)
-            car.userData.backwards = false;
+        car.userData.backwards = false;
         break;
     case 69: //'e'
-        if(!collision.action)
-            claw.userData.up = false;
+        claw.userData.up = false;
         break;
     case 68: //'d'
-        if(!collision.action)
-            claw.userData.down = false;
+        claw.userData.down = false;
         break;
     case 82: //'r'
-        if(!collision.action)
-            claw.userData.rotateIn = false;
+        claw.userData.rotateIn = false;
         break;
     case 70: //'f'
-        if(!collision.action)
-            claw.userData.rotateOut = false;
+        claw.userData.rotateOut = false;
         break;
     }
 
