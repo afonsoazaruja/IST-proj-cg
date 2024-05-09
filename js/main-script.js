@@ -375,9 +375,9 @@ function checkCollisions(){
             collision.number = i;
             collision.phase1 = true;
             if(vectorClaw.x < 0){
-                collision.rotation = false;
-            }else{
                 collision.rotation = true;
+            }else{
+                collision.rotation = false;
             }
             cancelAnimation();
         }
