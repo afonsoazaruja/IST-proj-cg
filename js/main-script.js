@@ -25,7 +25,15 @@ var c=1, h=10;
 
 var claw_rotation = 0;
 
-var collision = [false,-1]
+var collision = new Array();
+collision.action= false;
+collision.number = -1;
+collision.phase1 = false;
+collision.phase2 = false;
+collision.phase3 = false;
+collision.phase4 = false;
+collision.phase5 = false;
+collision.rotation;
 
 // Get reference to HUD element
 var posRotation = document.getElementById('pos_rotation');
@@ -345,7 +353,9 @@ function createObjects(){
 
 function checkCollisions(){
     'use strict';
-    
+
+    if (collision.action)
+        return;
     var vectorClaw= new THREE.Vector3();
     claw.getWorldPosition(vectorClaw)
     var vectorObject= new THREE.Vector3();
@@ -362,7 +372,14 @@ function checkCollisions(){
         // Check if the distance is less than the sum of the radius
         if (distance < claw.radius + objects[i].radius){
             console.log("Collision detected");
-            collision = [true, i];
+            collision.action = true;
+            collision.number = i;
+            collision.phase1 = true;
+            if(vectorClaw.x < 0){
+                collision.rotation = false;
+            }else{
+                collision.rotation = true;
+            }
         }
         if (collision[0])
             break;
@@ -484,7 +501,81 @@ function update(){
         open.innerHTML = 'Claw Open (F)';
     }
     checkCollisions();
+    //phase 1 (abrir), phase 2 (fechar), phase 3 (subir e colocar na posisao certa), phase 4 (descer), phase 5 (limpar o objeto)
+    var vectorClaw= new THREE.Vector3();
+    claw.getWorldPosition(vectorClaw)
+    if(collision.phase1){
+        if(claw_rotation > -4*c){
+            claw.userData.rotateOut = true;
+        } else {
+            claw.userData.rotateOut = false;
+            collision.phase1 = false;
+            collision.phase2 = true;
+        }
+    }
+    if(collision.phase2){
+        if(claw_rotation < 3*c){
+            claw.userData.rotateIn = true;
+            if(vectorClaw.y > 4)
+                claw.userData.down = true;
+        } else {
+            claw.userData.rotateIn = false;
+            claw.userData.down = false;
+            collision.phase2 = false;
+            collision.phase3 = true;
 
+        }
+    }
+    if(collision.phase3){
+        if(vectorClaw.y < 7){
+            claw.userData.up = true;
+            objects[collision.number].position.y+=5 * delta;
+        }else{
+            claw.userData.up = false;
+        }
+        if(car.position.z < 10){
+            car.userData.forwards = true;
+        }else{
+            car.userData.forwards = false;
+        }
+        if(collision.rotation && car.position.z > 10){
+            crane.userData.rot_pos = true;
+        }if(!collision.rotation && car.position.z > 10){
+            crane.userData.rot_neg = true;
+        }
+        if(vectorClaw.z > 6.5 && vectorClaw.z < 7.5 && vectorClaw.x > 6.5 && vectorClaw.x < 7.5){
+            crane.userData.rot_pos = false;
+            crane.userData.rot_neg = false;
+            car.userData.forwards = false;
+            claw.userData.up = false;
+            collision.phase3 = false;
+            collision.phase4 = true;
+        }
+        objects[collision.number].position.z = vectorClaw.z;
+        objects[collision.number].position.x = vectorClaw.x;
+    }
+    if(collision.phase4){
+        if(vectorClaw.y > 4){
+            claw.userData.down = true;
+            objects[collision.number].position.y-=5 * delta;
+        }else{
+            claw.userData.down = false;
+            collision.phase4 = false;
+            collision.phase5 = true;
+        } 
+    }
+    if(collision.phase5){
+        if(objects[collision.number].position.y > 0)
+            objects[collision.number].position.y -= 5 * delta;
+        else{
+            objects[collision.number].position.y = -20;
+            scene.remove(objects[collision.number]);
+            collision.action = false;
+            collision.phase5 = false;
+            collision.number = -1;
+        }
+    }
+    
 }
 
 /////////////
@@ -542,11 +633,6 @@ function onResize() {
 function onKeyDown(e) {
     'use strict';
 
-    console.log("key down")
-
-    console.log(e.keyCode)
-    console.log(collision[0])
-
     switch (e.keyCode) {
     case 49: //'1'
         camera = cameras[0];
@@ -578,44 +664,36 @@ function onKeyDown(e) {
         material5.wireframe = !material5.wireframe;        
         break;
     case 81: //'q'
-        if(collision[0])
-            break;
-        crane.userData.rot_neg = true;
+        if(!collision.action)
+            crane.userData.rot_neg = true;
         break;
     case 65: //'a'
-        if(collision[0])
-            break;
-        crane.userData.rot_pos = true;
+        if(!collision.action)
+            crane.userData.rot_pos = true;
         break;
     case 87: //'w'
-        if(collision[0])
-            break;
-        car.userData.forwards = true;
+        if(!collision.action)
+            car.userData.forwards = true;
         break;
     case 83: //'s'
-        if(collision[0])
-            break;
-        car.userData.backwards = true;
+        if(!collision.action)
+            car.userData.backwards = true;
         break;
     case 69: //'e'
-        if(collision[0])
-            break;
-        claw.userData.up = true;
+        if(!collision.action)
+            claw.userData.up = true;
         break;
     case 68: //'d'
-        if(collision[0])
-            break;
-        claw.userData.down = true;
+        if(!collision.action)
+            claw.userData.down = true;
         break;
     case 82: //'r'
-        if(collision[0])
-            break;
-        claw.userData.rotateIn = true;
+        if(!collision.action)
+            claw.userData.rotateIn = true;
         break;
     case 70: //'f'
-        if(collision[0])
-            break;
-        claw.userData.rotateOut = true;
+        if(!collision.action)
+            claw.userData.rotateOut = true;
         break;
     }
 }
@@ -628,28 +706,36 @@ function onKeyUp(e){
 
     switch (e.keyCode) {
     case 81: //'q'
-        crane.userData.rot_neg = false;        
+        if(!collision.action)
+            crane.userData.rot_neg = false;        
         break;
     case 65: //'a'
-        crane.userData.rot_pos = false;        
+        if(!collision.action)
+            crane.userData.rot_pos = false;        
         break;
     case 87: //'w'
-        car.userData.forwards = false;
+        if(!collision.action)
+            car.userData.forwards = false;
         break;
     case 83: //'s'
-        car.userData.backwards = false;
+        if(!collision.action)
+            car.userData.backwards = false;
         break;
     case 69: //'e'
-        claw.userData.up = false;
+        if(!collision.action)
+            claw.userData.up = false;
         break;
     case 68: //'d'
-        claw.userData.down = false;
+        if(!collision.action)
+            claw.userData.down = false;
         break;
     case 82: //'r'
-        claw.userData.rotateIn = false;
+        if(!collision.action)
+            claw.userData.rotateIn = false;
         break;
     case 70: //'f'
-        claw.userData.rotateOut = false;
+        if(!collision.action)
+            claw.userData.rotateOut = false;
         break;
     }
 
