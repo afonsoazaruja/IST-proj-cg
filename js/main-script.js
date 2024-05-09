@@ -1,8 +1,4 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { VRButton } from 'three/addons/webxr/VRButton.js';
-import * as Stats from 'three/addons/libs/stats.module.js';
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 //////////////////////
 /* GLOBAL VARIABLES */
@@ -36,14 +32,16 @@ collision.phase5 = false;
 collision.rotation;
 
 // Get reference to HUD element
-var posRotation = document.getElementById('pos_rotation');
-var negRotation = document.getElementById('neg_rotation');
-var forwards = document.getElementById('forwards');
-var backwards = document.getElementById('backwards');
-var up = document.getElementById('up');
-var down = document.getElementById('down');
-var close = document.getElementById('close');
-var open = document.getElementById('open');
+var camHUD = [
+    document.getElementById('cam1'),
+    document.getElementById('cam2'),
+    document.getElementById('cam3'),
+    document.getElementById('cam4'),
+    document.getElementById('cam5'),
+    document.getElementById('cam6')
+];
+
+var toggleWireframe = false;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -233,7 +231,6 @@ function createCrane() {
     crane.position.x = 0;
     crane.position.y = c+h;
     crane.position.z = 0;
-
 }
 
 function createCar() {
@@ -259,7 +256,7 @@ function createClaw() {
 
     claw = new THREE.Object3D();
     claw.add(new THREE.AxesHelper(2));
-    claw.userData = { up: false, down: false, rotateIn: false, rotateOut: false, rotation: 0.0, step: 0 };
+    claw.userData = { up: false, down: false, rotateIn: false, rotateOut: false, rotation: 0.0 };
 
     addCylinder(claw, c, c, c, 50, 0, 0, 0, 0, 0, 0, material5, null); // claw block
     addTetrahedron(claw, 2*c/3, -c/3, 0, material2, true, "claw1"); // claw
@@ -285,7 +282,9 @@ function createContainer(){
     addCube(container, 5.5,2.5,0.2 , 0,-0.8,-3.5, material5)
     addCube(container, 0.2,2.5,7 , 2.7,-0.8,0, material5)
     addCube(container, 0.2,2.5,7 , -2.7,-0.8,0, material5)
+
     scene.add(container);
+
     container.position.x = 7;
     container.position.y = 1.5;
     container.position.z = 7;
@@ -425,32 +424,33 @@ function update(){
     'use strict';
     
     var delta = clock.getDelta();
+    // Crane Controls
     if (crane.userData.rot_pos) {
-        posRotation.innerHTML = '<b>Crane Positive Rotation (Q)</b>';
-        crane.rotateY(-0.3 * delta);
-    } else {
-        posRotation.innerHTML = 'Crane Positive Rotation (Q)';
-    }
-    if (crane.userData.rot_neg) {
-        negRotation.innerHTML = '<b>Crane Negative Rotation (A)</b>';
+        pos_rotation.style.color = 'lightgreen';        
         crane.rotateY(0.3 * delta);
     } else {
-        negRotation.innerHTML = 'Crane Negative Rotation (A)';
+        pos_rotation.style.color = 'tomato';
+    }
+    if (crane.userData.rot_neg) {
+        neg_rotation.style.color = 'lightgreen';
+        crane.rotateY(-0.3 * delta);
+    } else {
+        neg_rotation.style.color = 'tomato';
     }
     if (car.userData.forwards && car.position.z < 10) {
-        forwards.innerHTML = '<b>Trolley Forwards (W)</b>';
+        forwards.style.color = 'lightgreen';
         car.position.z += 1.5 * delta;
     } else {
-        forwards.innerHTML = 'Trolley Forwards (W)';
+        forwards.style.color = 'tomato';
     }
     if (car.userData.backwards && car.position.z > 2) {
-        backwards.innerHTML = '<b>Trolley Backwards (S)</b>';
+        backwards.style.color = 'lightgreen';
         car.position.z -= 1.5 * delta;
     } else {
-        backwards.innerHTML = 'Trolley Backwards (S)';
+        backwards.style.color = 'tomato';
     }
     if (claw.userData.up && claw.position.y < -1) {
-        up.innerHTML = '<b>Claw Up (E)</b>';
+        up.style.color = 'lightgreen';
         claw.position.y += 5 * delta;
         car.children.forEach(element => {
             if (element.name == "cable") {
@@ -459,10 +459,10 @@ function update(){
             }
         });
     } else {
-        up.innerHTML = 'Claw Up (E)';
+        up.style.color = 'tomato';
     }
     if (claw.userData.down && claw.position.y > -10) {
-        down.innerHTML = '<b>Claw Down (D)</b>';
+        down.style.color = 'lightgreen';
         claw.position.y -= 5 * delta;
         car.children.forEach(element => {
             if (element.name == "cable") {
@@ -471,10 +471,10 @@ function update(){
             }
         });
     } else {
-        down.innerHTML = 'Claw Down (D)';
+        down.style.color = 'tomato';
     }
     if (claw.userData.rotateIn && claw_rotation < 3*c) {
-        close.innerHTML = '<b>Claw Close (R)</b>';
+        close_claw.style.color = 'lightgreen';
         claw.children.forEach(element => {
             if (element.name == "claw1") {
                 element.rotateZ(0.01);
@@ -491,10 +491,10 @@ function update(){
             claw_rotation += 0.01;
         });
     } else {
-        close.innerHTML = 'Claw Close (R)';
+        close_claw.style.color = 'tomato';
     }
     if (claw.userData.rotateOut && claw_rotation > -4*c) {
-        open.innerHTML = '<b>Claw Open (F)</b>';
+        open_claw.style.color = 'lightgreen';
         claw.children.forEach(element => {
             if (element.name == "claw1") {
                 element.rotateZ(-0.01);
@@ -511,7 +511,24 @@ function update(){
             claw_rotation -= 0.01;
         });
     } else {
-        open.innerHTML = 'Claw Open (F)';
+        open_claw.style.color = 'tomato';
+    }
+
+    // Cameras
+    for (var i = 0; i < 6; i++) {
+        camHUD[i].style.color = 'tomato';
+    }    
+    var currentCameraIndex = cameras.indexOf(camera);
+    
+    if (currentCameraIndex !== -1) {
+        camHUD[currentCameraIndex].style.color = 'lightgreen';
+    }
+
+    // Wireframe
+    if (toggleWireframe) {
+        wireframe.style.color = 'lightgreen';
+    } else {
+        wireframe.style.color = 'tomato';
     }
     checkCollisions();
     //phase 1 (abrir), phase 2 (fechar), phase 3 (subir e colocar na posisao certa), phase 4 (descer), phase 5 (limpar o objeto)
@@ -635,7 +652,7 @@ function animate() {
 ////////////////////////////
 /* RESIZE WINDOW CALLBACK */
 ////////////////////////////
-function onResize() { 
+function onResize() {
     'use strict';
 
 }
@@ -670,6 +687,7 @@ function onKeyDown(e) {
         camera = cameras[5];
         break;
     case 55 : //'7'
+        toggleWireframe = !toggleWireframe;
         material1.wireframe = !material1.wireframe;
         material2.wireframe = !material2.wireframe;        
         material3.wireframe = !material3.wireframe;        
@@ -678,11 +696,11 @@ function onKeyDown(e) {
         break;
     case 81: //'q'
         if(!collision.action)
-            crane.userData.rot_neg = true;
-        break;
-    case 65: //'a'
-        if(!collision.action)
             crane.userData.rot_pos = true;
+        break;
+        case 65: //'a'
+        if(!collision.action)
+            crane.userData.rot_neg = true;
         break;
     case 87: //'w'
         if(!collision.action)
@@ -719,10 +737,10 @@ function onKeyUp(e){
 
     switch (e.keyCode) {
     case 81: //'q'
-        crane.userData.rot_neg = false;        
+        crane.userData.rot_pos = false;        
         break;
     case 65: //'a'
-        crane.userData.rot_pos = false;        
+        crane.userData.rot_neg = false;        
         break;
     case 87: //'w'
         car.userData.forwards = false;
