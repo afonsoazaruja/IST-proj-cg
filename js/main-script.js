@@ -7,6 +7,9 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
+
+var clock;
+
 var cameras=new Array(), camera, scene, renderer;
 
 var geometry, mesh;
@@ -21,6 +24,18 @@ var base, crane, car, claw, container, objects= new Array();
 var c=1, h=10;
 
 var claw_rotation = 0;
+
+var collision = [false,-1]
+
+// Get reference to HUD element
+var posRotation = document.getElementById('pos_rotation');
+var negRotation = document.getElementById('neg_rotation');
+var forwards = document.getElementById('forwards');
+var backwards = document.getElementById('backwards');
+var up = document.getElementById('up');
+var down = document.getElementById('down');
+var close = document.getElementById('close');
+var open = document.getElementById('open');
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -150,20 +165,16 @@ function addTetrahedron(obj, ref_x, ref_y, ref_z, material, reversed, name) {
     const geometry = new THREE.BufferGeometry();
     
     const vertices = [
-        // Base triangle
-        0, 0, -c/4,              // Vertex 0
+        0, 0, -c/4,        // Vertex 0
         -c/4, 0, c/4,      // Vertex 1
         c/4, 0, c/4,       // Vertex 2
-        // Apex
-        0, c, 0                         // Vertex 3
+        0, c, 0            // Apex (3)
     ];
 
     const indices = [
-        // Base triangle
-        0, 1, 2,
-        // Side triangles
+        0, 1, 2,        // Base
         0, 2, 3,
-        2, 1, 3,
+        2, 1, 3,        // Side Triangles
         1, 0, 3
     ];
 
@@ -225,7 +236,7 @@ function createCar() {
     car.userData = { forwards: false, backwards: false, step: 0 };
     
     addCube(car, c/2, c/2, c, 0, 0, 0, material5); // car
-    addCylinder(car, c/8, c/8, 5*c, 50, 0, -((h+c)/4), 0, 0, 0, 0, material5, "cable"); // steel cable
+    addCylinder(car, c/16, c/16, 5*c, 50, 0, -((h+c)/4), 0, 0, 0, 0, material5, "cable"); // steel cable
     
     createClaw(car);
     crane.add(car);
@@ -334,6 +345,7 @@ function createObjects(){
 
 function checkCollisions(){
     'use strict';
+    
     var vectorClaw= new THREE.Vector3();
     claw.getWorldPosition(vectorClaw)
     var vectorObject= new THREE.Vector3();
@@ -350,8 +362,12 @@ function checkCollisions(){
         // Check if the distance is less than the sum of the radius
         if (distance < claw.radius + objects[i].radius){
             console.log("Collision detected");
+            collision = [true, i];
         }
+        if (collision[0])
+            break;
     }
+
 }
 
 ///////////////////////
@@ -359,6 +375,15 @@ function checkCollisions(){
 ///////////////////////
 function handleCollisions(){
     'use strict';
+
+    // não permitir tocar nas teclas de movimento
+    // agarrar no bloco
+    // subir cabo
+    // alinhar carrinho
+    // rodar grua
+    // descer cabo
+    // soltar bloco
+    // subir cabo (duvidoso)
 
 }
 
@@ -368,37 +393,58 @@ function handleCollisions(){
 function update(){
     'use strict';
     
+    var delta = clock.getDelta();
+
     if (crane.userData.rot_pos) {
-        crane.rotateY(0.01);
+        posRotation.innerHTML = '<b>Crane Positive Rotation (Q)</b>';
+        crane.rotateY(-0.3 * delta);
+    } else {
+        posRotation.innerHTML = 'Crane Positive Rotation (Q)';
     }
     if (crane.userData.rot_neg) {
-        crane.rotateY(-0.01);
+        negRotation.innerHTML = '<b>Crane Negative Rotation (A)</b>';
+        crane.rotateY(0.3 * delta);
+    } else {
+        negRotation.innerHTML = 'Crane Negative Rotation (A)';
     }
     if (car.userData.forwards && car.position.z < 10) {
-        car.position.z += 0.1;
+        forwards.innerHTML = '<b>Trolley Forwards (W)</b>';
+        car.position.z += 1.5 * delta;
+    } else {
+        forwards.innerHTML = 'Trolley Forwards (W)';
     }
     if (car.userData.backwards && car.position.z > 2) {
-        car.position.z -= 0.1;
+        backwards.innerHTML = '<b>Trolley Backwards (S)</b>';
+        car.position.z -= 1.5 * delta;
+    } else {
+        backwards.innerHTML = 'Trolley Backwards (S)';
     }
     if (claw.userData.up && claw.position.y < -1) {
-        claw.position.y += 0.05;
+        up.innerHTML = '<b>Claw Up (E)</b>';
+        claw.position.y += 5 * delta;
         car.children.forEach(element => {
             if (element.name == "cable") {
-                element.scale.y -= 0.01;
-                element.position.y += 0.025
+                element.scale.y -= 1 * delta;
+                element.position.y += 2.5 * delta;
             }
         });
+    } else {
+        up.innerHTML = 'Claw Up (E)';
     }
     if (claw.userData.down && claw.position.y > -10) {
-        claw.position.y -= 0.05;
+        down.innerHTML = '<b>Claw Down (D)</b>';
+        claw.position.y -= 5 * delta;
         car.children.forEach(element => {
             if (element.name == "cable") {
-                element.scale.y += 0.01;
-                element.position.y -= 0.025
+                element.scale.y += 1 * delta;
+                element.position.y -= 2.5 * delta;
             }
         });
+    } else {
+        down.innerHTML = 'Claw Down (D)';
     }
     if (claw.userData.rotateIn && claw_rotation < 3*c) {
+        close.innerHTML = '<b>Claw Close (R)</b>';
         claw.children.forEach(element => {
             if (element.name == "claw1") {
                 element.rotateZ(0.01);
@@ -414,8 +460,11 @@ function update(){
             }
             claw_rotation += 0.01;
         });
+    } else {
+        close.innerHTML = 'Claw Close (R)';
     }
     if (claw.userData.rotateOut && claw_rotation > -4*c) {
+        open.innerHTML = '<b>Claw Open (F)</b>';
         claw.children.forEach(element => {
             if (element.name == "claw1") {
                 element.rotateZ(-0.01);
@@ -431,6 +480,8 @@ function update(){
             }
             claw_rotation -= 0.01;
         });
+    } else {
+        open.innerHTML = 'Claw Open (F)';
     }
     checkCollisions();
 
@@ -449,6 +500,9 @@ function render() {
 ////////////////////////////////
 function init() {
     'use strict';
+
+    clock = new THREE.Clock();
+
     renderer = new THREE.WebGLRenderer({
         antialias: true
     });
@@ -488,6 +542,11 @@ function onResize() {
 function onKeyDown(e) {
     'use strict';
 
+    console.log("key down")
+
+    console.log(e.keyCode)
+    console.log(collision[0])
+
     switch (e.keyCode) {
     case 49: //'1'
         camera = cameras[0];
@@ -511,35 +570,51 @@ function onKeyDown(e) {
     case 54: //'6'
         camera = cameras[5];
         break;
-    case 55: //'7'
+    case 55 : //'7'
         material1.wireframe = !material1.wireframe;
         material2.wireframe = !material2.wireframe;        
         material3.wireframe = !material3.wireframe;        
         material4.wireframe = !material4.wireframe;        
         material5.wireframe = !material5.wireframe;        
         break;
-    case 65: //'q'
+    case 81: //'q'
+        if(collision[0])
+            break;
         crane.userData.rot_neg = true;
         break;
-    case 81: //'a'
+    case 65: //'a'
+        if(collision[0])
+            break;
         crane.userData.rot_pos = true;
         break;
     case 87: //'w'
+        if(collision[0])
+            break;
         car.userData.forwards = true;
         break;
     case 83: //'s'
+        if(collision[0])
+            break;
         car.userData.backwards = true;
         break;
     case 69: //'e'
+        if(collision[0])
+            break;
         claw.userData.up = true;
         break;
     case 68: //'d'
+        if(collision[0])
+            break;
         claw.userData.down = true;
         break;
     case 82: //'r'
+        if(collision[0])
+            break;
         claw.userData.rotateIn = true;
         break;
     case 70: //'f'
+        if(collision[0])
+            break;
         claw.userData.rotateOut = true;
         break;
     }
@@ -552,10 +627,10 @@ function onKeyUp(e){
     'use strict';
 
     switch (e.keyCode) {
-    case 65: //'q'
+    case 81: //'q'
         crane.userData.rot_neg = false;        
         break;
-    case 81: //'a'
+    case 65: //'a'
         crane.userData.rot_pos = false;        
         break;
     case 87: //'w'
