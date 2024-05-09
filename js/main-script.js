@@ -9,11 +9,17 @@ var clock;
 var cameras=new Array(), camera, scene, renderer;
 
 var geometry, mesh;
+
+// materials
 var material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D}); // gold
 var material2 = new THREE.MeshBasicMaterial({ color: 0x404040}); // grey
 var material3 = new THREE.MeshBasicMaterial({ color: 0xFF9933}); // orange
 var material4 = new THREE.MeshBasicMaterial({ color: 0xFFFFFF}); // white
 var material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4}); // grey steel
+var material6 = new THREE.MeshBasicMaterial({ color: 0x00007E}); // dark blue
+var material7 = new THREE.MeshBasicMaterial({ color: 0x008000}); // dark green
+var material8 = new THREE.MeshBasicMaterial({ color: 0xBC0000}); // red
+var material9 = new THREE.MeshBasicMaterial({ color: 0x6D3600}); // brown
 
 var base, crane, car, claw, container, objects= new Array();
 
@@ -21,6 +27,7 @@ var c=1, h=10;
 
 var claw_rotation = 0;
 
+// colision variables
 var collision = new Array();
 collision.action= false;
 collision.number = -1;
@@ -90,12 +97,12 @@ function createOrthographicCamera(id,x,y,z) {
 }
 
 function createCameras(){
-    createOrthographicCamera(0,0,6,100);
-    createOrthographicCamera(1,100,6,0);
-    createOrthographicCamera(2,0,50,0);
-    createOrthographicCamera(3,10,6,10);
-    createPersepectiveCamera(4,15,15,15);
-    createPersepectiveCamera(5,0,0,0);
+    createOrthographicCamera(0,0,6,100);    // camera 1
+    createOrthographicCamera(1,100,6,0);    // camera 2
+    createOrthographicCamera(2,0,50,0);     // camera 3
+    createOrthographicCamera(3,10,6,10);    // camera 4
+    createPersepectiveCamera(4,15,15,15);   // camera 5
+    createPersepectiveCamera(5,0,0,0);      // camera 6
     cameras[5].lookAt(0,10,0);
     cameras[5].rotation.x = -Math.PI/2;
     claw.add(cameras[5]); // para movimentacao da camara em relacao a grua
@@ -122,7 +129,7 @@ function addCube(obj, x, y, z, ref_x, ref_y, ref_z, material) {
     obj.add(mesh);
 }
 
-/* Function that creates a cilinder and positions it in the referencial */
+/* Function that creates a cilinder, rotates it (if needed) and positions it in the referencial */
 function addCylinder(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, rot_x, rot_y, rot_z, material, name) {
     'use strict';
     
@@ -134,16 +141,17 @@ function addCylinder(obj, rt, rb, h, rs, ref_x, ref_y, ref_z, rot_x, rot_y, rot_
     obj.add(mesh);
 }
 
+/* Function that creates a pyramid and positions it in the referencial */
 function addPyramid(obj, ref_x, ref_y, ref_z, material) {
     'use strict';
     const geometry = new THREE.BufferGeometry();
     
     const vertices = new Float32Array([
-        -c/2, 0, -c/2,   // Base vertices
-        c/2, 0, -c/2,
-        c/2, 0, c/2,    
-        -c/2, 0, c/2,
-        0, 2*c, 0        // Apex
+        -c/2, 0, -c/2,      // Vertex 0
+        c/2, 0, -c/2,       // Vertex 1
+        c/2, 0, c/2,        // Vertex 2
+        -c/2, 0, c/2,       // Vertex 3
+        0, 2*c, 0           // Apex (4)
     ]);
 
     const indices = new Uint32Array([
@@ -179,8 +187,8 @@ function addTetrahedron(obj, ref_x, ref_y, ref_z, material, reversed, name) {
 
     const indices = [
         0, 1, 2,        // Base
-        0, 2, 3,
-        2, 1, 3,        // Side Triangles
+        0, 2, 3,        // Side Triangles
+        2, 1, 3,
         1, 0, 3
     ];
 
@@ -195,6 +203,7 @@ function addTetrahedron(obj, ref_x, ref_y, ref_z, material, reversed, name) {
     obj.add(mesh);
 }
 
+/* Function that creates the base and tower */
 function createBase() {
     'use strict';
 
@@ -210,6 +219,7 @@ function createBase() {
     base.position.z = 0;
 }
 
+/* Function that creates and positions the jib, counter jib and all the other objects in that referencial */
 function createCrane() {
     'use strict';
 
@@ -233,6 +243,7 @@ function createCrane() {
     crane.position.z = 0;
 }
 
+/* Function that creates the car and the steel cable and positions them */
 function createCar() {
     'use strict';
 
@@ -251,6 +262,7 @@ function createCar() {
     car.position.z = 10*c;
 }
 
+/* FUnction that creates the block and claws and positions them */
 function createClaw() {
     'use strict';
 
@@ -272,16 +284,17 @@ function createClaw() {
     car.add(claw);
 }
 
+/* Function that creates the container and positions it */
 function createContainer(){
     'use strict';
 
     container = new THREE.Object3D();
     
-    addCube(container, 5.5,0,7 , 0,-1.5,0, material2)
-    addCube(container, 5.5,2.5,0.2 , 0,-0.8,3.5, material5)
-    addCube(container, 5.5,2.5,0.2 , 0,-0.8,-3.5, material5)
-    addCube(container, 0.2,2.5,7 , 2.7,-0.8,0, material5)
-    addCube(container, 0.2,2.5,7 , -2.7,-0.8,0, material5)
+    addCube(container, 5.5,0,7 , 0,-1.5,0, material2);              // base
+    addCube(container, 5.5,2.5,0.2 , 0,-0.8,3.5, material5);        // wall
+    addCube(container, 5.5,2.5,0.2 , 0,-0.8,-3.5, material5);       // wall
+    addCube(container, 0.2,2.5,7 , 2.7,-0.8,0, material5);          // wall
+    addCube(container, 0.2,2.5,7 , -2.7,-0.8,0, material5);         // wall
 
     scene.add(container);
 
@@ -290,6 +303,7 @@ function createContainer(){
     container.position.z = 7;
 }
 
+/* Create the objects and position them */
 function createObjects(){
     'use strict';
     
@@ -297,33 +311,35 @@ function createObjects(){
         objects[i] = new THREE.Object3D();
         scene.add(objects[i]);
     }
-    addCube(objects[0], 1, 1, 1, 0, 0, 0, material1);
-    objects[0].radius = Math.sqrt(3)/2;
+
+    addCube(objects[0], 1, 1, 1, 0, 0, 0, material6);               // cube
+    objects[0].radius = Math.sqrt(3)/2;                             // sphere around for collisions
     
-    geometry = new THREE.DodecahedronGeometry(1);
-    mesh = new THREE.Mesh(geometry, material2);
+    geometry = new THREE.DodecahedronGeometry(1);                   // dodecahedron
+    mesh = new THREE.Mesh(geometry, material9);
     mesh.position.set(0, 0, 0);
     objects[1].add(mesh);
-    objects[1].radius = 1;
+    objects[1].radius = 1;                                          // sphere around for collisions
 
-    geometry = new THREE.IcosahedronGeometry(1);
+    geometry = new THREE.IcosahedronGeometry(1);                    // icosahedron
     mesh = new THREE.Mesh(geometry, material3);
     mesh.position.set(0, 0, 0);
     objects[2].add(mesh);
-    objects[2].radius = 1;
+    objects[2].radius = 1;                                          // sphere around for collisions
 
-    geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);
-    mesh = new THREE.Mesh(geometry, material4);
+    geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);          // torus
+    mesh = new THREE.Mesh(geometry, material8);
     mesh.position.set(0, 0, 0);
     objects[3].add(mesh);
-    objects[3].radius = 1;
+    objects[3].radius = 1;                                          // sphere around for collisions
 
-    geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);
-    mesh = new THREE.Mesh(geometry, material5);
+    geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);      // torus knot
+    mesh = new THREE.Mesh(geometry, material7);
     mesh.position.set(0, 0, 0);
     objects[4].add(mesh);
-    objects[4].radius = 1;
+    objects[4].radius = 1;                                          // sphere around for collisions
 
+    // positioning each object
     objects[0].position.x = -5;
     objects[0].position.y = 0;
     objects[0].position.z = 4;
@@ -355,11 +371,13 @@ function checkCollisions(){
 
     if (collision.action)
         return;
+
     var vectorClaw= new THREE.Vector3();
-    claw.getWorldPosition(vectorClaw)
+    claw.getWorldPosition(vectorClaw);          // initial position (claw position when the collision occurs)
+
     var vectorObject= new THREE.Vector3();
     for (let i = 0; i < 5; i++) {
-        objects[i].getWorldPosition(vectorObject)
+        objects[i].getWorldPosition(vectorObject);      // object position
 
         // Calculate the distance between the centers of the spheres
         const dx = vectorClaw.x - vectorObject.x;
@@ -387,6 +405,7 @@ function checkCollisions(){
 
 }
 
+/* Function that stops the animation */
 function cancelAnimation(){
     'use strict';
     crane.userData.rot_pos = false;
@@ -403,54 +422,47 @@ function cancelAnimation(){
 ///////////////////////
 /* HANDLE COLLISIONS */
 ///////////////////////
+
+// not needed for this project
 function handleCollisions(){
     'use strict';
-
-    // não permitir tocar nas teclas de movimento
-    // agarrar no bloco
-    // subir cabo
-    // alinhar carrinho
-    // rodar grua
-    // descer cabo
-    // soltar bloco
-    // subir cabo (duvidoso)
-
 }
 
 ////////////
 /* UPDATE */
 ////////////
+
 function update(){
     'use strict';
     
     var delta = clock.getDelta();
     // Crane Controls
-    if (crane.userData.rot_pos) {
-        pos_rotation.style.color = 'lightgreen';        
+    if (crane.userData.rot_pos) {                   // pressing 'w'
+        pos_rotation.style.color = 'lightgreen';    // hud  
         crane.rotateY(0.3 * delta);
     } else {
         pos_rotation.style.color = 'tomato';
     }
-    if (crane.userData.rot_neg) {
-        neg_rotation.style.color = 'lightgreen';
+    if (crane.userData.rot_neg) {                   // pressing 'a'
+        neg_rotation.style.color = 'lightgreen';    // hud
         crane.rotateY(-0.3 * delta);
     } else {
         neg_rotation.style.color = 'tomato';
     }
-    if (car.userData.forwards && car.position.z < 10) {
-        forwards.style.color = 'lightgreen';
+    if (car.userData.forwards && car.position.z < 10) {     // pressing 'w'
+        forwards.style.color = 'lightgreen';                // hud
         car.position.z += 1.5 * delta;
     } else {
         forwards.style.color = 'tomato';
     }
-    if (car.userData.backwards && car.position.z > 2) {
-        backwards.style.color = 'lightgreen';
+    if (car.userData.backwards && car.position.z > 2) {     // pressing 's'
+        backwards.style.color = 'lightgreen';               // hud
         car.position.z -= 1.5 * delta;
     } else {
         backwards.style.color = 'tomato';
     }
-    if (claw.userData.up && claw.position.y < -1) {
-        up.style.color = 'lightgreen';
+    if (claw.userData.up && claw.position.y < -1) {         // pressing 'e'
+        up.style.color = 'lightgreen';                      // hud
         claw.position.y += 5 * delta;
         car.children.forEach(element => {
             if (element.name == "cable") {
@@ -461,8 +473,8 @@ function update(){
     } else {
         up.style.color = 'tomato';
     }
-    if (claw.userData.down && claw.position.y > -10) {
-        down.style.color = 'lightgreen';
+    if (claw.userData.down && claw.position.y > -10) {      // pressing 'd'
+        down.style.color = 'lightgreen';                    // hud
         claw.position.y -= 5 * delta;
         car.children.forEach(element => {
             if (element.name == "cable") {
@@ -473,42 +485,42 @@ function update(){
     } else {
         down.style.color = 'tomato';
     }
-    if (claw.userData.rotateIn && claw_rotation < 3*c) {
-        close_claw.style.color = 'lightgreen';
+    if (claw.userData.rotateIn && claw_rotation < 200*c) {      // pressing 'r'
+        close_claw.style.color = 'lightgreen';                  // hud
         claw.children.forEach(element => {
             if (element.name == "claw1") {
-                element.rotateZ(0.01);
+                element.rotateZ(0.3 * delta);
             }
             if (element.name == "claw2") {
-                element.rotateZ(-0.01);
+                element.rotateZ(-0.3 * delta);
             }
             if (element.name == "claw3") {
-                element.rotateX(0.01);
+                element.rotateX(0.3 * delta);
             }
             if (element.name == "claw4") {
-                element.rotateX(-0.01);
+                element.rotateX(-0.3 * delta);
             }
-            claw_rotation += 0.01;
+            claw_rotation += 0.3;
         });
     } else {
         close_claw.style.color = 'tomato';
     }
-    if (claw.userData.rotateOut && claw_rotation > -4*c) {
-        open_claw.style.color = 'lightgreen';
+    if (claw.userData.rotateOut && claw_rotation > -200*c) {        // pressing 'f'
+        open_claw.style.color = 'lightgreen';                       // hud
         claw.children.forEach(element => {
             if (element.name == "claw1") {
-                element.rotateZ(-0.01);
+                element.rotateZ(-0.3 * delta);
             }
             if (element.name == "claw2") {
-                element.rotateZ(0.01);
+                element.rotateZ(0.3 * delta);
             }
             if (element.name == "claw3") {
-                element.rotateX(-0.01);
+                element.rotateX(-0.3 * delta);
             }
             if (element.name == "claw4") {
-                element.rotateX(0.01);
+                element.rotateX(0.3 * delta);
             }
-            claw_rotation -= 0.01;
+            claw_rotation -= 0.3;
         });
     } else {
         open_claw.style.color = 'tomato';
@@ -530,12 +542,14 @@ function update(){
     } else {
         wireframe.style.color = 'tomato';
     }
+
     checkCollisions();
     //phase 1 (abrir), phase 2 (fechar), phase 3 (subir e colocar na posisao certa), phase 4 (descer), phase 5 (limpar o objeto)
     var vectorClaw= new THREE.Vector3();
-    claw.getWorldPosition(vectorClaw)
-    if(collision.phase1){
-        if(claw_rotation > -4*c){
+    claw.getWorldPosition(vectorClaw);          // position of the claw (initial position) 
+
+    if(collision.phase1){           // open the claw
+        if(claw_rotation > -200*c){
             claw.userData.rotateOut = true;
         } else {
             claw.userData.rotateOut = false;
@@ -543,8 +557,8 @@ function update(){
             collision.phase2 = true;
         }
     }
-    if(collision.phase2){
-        if(claw_rotation < 3*c){
+    if(collision.phase2){           // close the claw
+        if(claw_rotation < 200*c){
             claw.userData.rotateIn = true;
             if(vectorClaw.y > 4)
                 claw.userData.down = true;
@@ -556,14 +570,15 @@ function update(){
 
         }
     }
+
     if(collision.phase3){
         if(vectorClaw.y < 7){
             claw.userData.up = true;
-            objects[collision.number].position.y+=5 * delta;
+            objects[collision.number].position.y += 5 * delta;      // go to the right height (up)
         }else{
             claw.userData.up = false;
         }
-        if(car.position.z < 10){
+        if(car.position.z < 10){                // go to the right position
             car.userData.forwards = true;
         }else{
             car.userData.forwards = false;
@@ -584,7 +599,8 @@ function update(){
         objects[collision.number].position.z = vectorClaw.z;
         objects[collision.number].position.x = vectorClaw.x;
     }
-    if(collision.phase4){
+
+    if(collision.phase4){               // go to the right height (down)
         if(vectorClaw.y > 4){
             claw.userData.down = true;
             objects[collision.number].position.y-=5 * delta;
@@ -594,7 +610,8 @@ function update(){
             collision.phase5 = true;
         } 
     }
-    if(collision.phase5){
+
+    if(collision.phase5){               // release the object and remove it
         if(objects[collision.number].position.y > 0)
             objects[collision.number].position.y -= 5 * delta;
         else{
@@ -660,6 +677,7 @@ function onResize() {
 ///////////////////////
 /* KEY DOWN CALLBACK */
 ///////////////////////
+
 function onKeyDown(e) {
     'use strict';
 
@@ -732,6 +750,7 @@ function onKeyDown(e) {
 ///////////////////////
 /* KEY UP CALLBACK */
 ///////////////////////
+
 function onKeyUp(e){
     'use strict';
 
