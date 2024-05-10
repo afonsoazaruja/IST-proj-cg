@@ -4,7 +4,7 @@ import * as THREE from 'three';
 /* GLOBAL VARIABLES */
 //////////////////////
 
-var clock;
+var clock, delta;
 
 var cameras=new Array(), camera, scene, renderer;
 
@@ -73,7 +73,7 @@ function createPersepectiveCamera(id,x,y,z) {
     var cam;
     cam = new THREE.PerspectiveCamera(70,
                                          window.innerWidth / window.innerHeight,
-                                         1,
+                                         0.4,
                                          1000);
     cam.position.x = x;
     cam.position.y = y;
@@ -87,7 +87,7 @@ function createPersepectiveCamera(id,x,y,z) {
 function createOrthographicCamera(id,x,y,z) {
     'use strict';
     var cam;
-    cam = new THREE.OrthographicCamera(window.innerWidth / - 75, window.innerWidth / 75, window.innerHeight / 75, window.innerHeight / - 75, 1);
+    cam = new THREE.OrthographicCamera(window.innerWidth / - 75, window.innerWidth / 75, window.innerHeight / 75, window.innerHeight / - 75);
     cam.position.x = x;
     cam.position.y = y;
     cam.position.z = z;
@@ -100,8 +100,8 @@ function createCameras(){
     createOrthographicCamera(0,0,6,100);    // camera 1
     createOrthographicCamera(1,100,6,0);    // camera 2
     createOrthographicCamera(2,0,50,0);     // camera 3
-    createOrthographicCamera(3,10,6,10);    // camera 4
-    createPersepectiveCamera(4,15,15,15);   // camera 5
+    createOrthographicCamera(3,15,6,15);    // camera 4
+    createPersepectiveCamera(4,20,20,20);   // camera 5
     createPersepectiveCamera(5,0,0,0);      // camera 6
     cameras[5].lookAt(0,10,0);
     cameras[5].rotation.x = -Math.PI/2;
@@ -313,7 +313,7 @@ function createObjects(){
     }
 
     addCube(objects[0], 1, 1, 1, 0, 0, 0, material6);               // cube
-    objects[0].radius = Math.sqrt(3)/2;                             // sphere around for collisions
+    objects[0].radius = 0.4;                             // sphere around for collisions
     
     geometry = new THREE.DodecahedronGeometry(1);                   // dodecahedron
     mesh = new THREE.Mesh(geometry, material9);
@@ -331,7 +331,7 @@ function createObjects(){
     mesh = new THREE.Mesh(geometry, material8);
     mesh.position.set(0, 0, 0);
     objects[3].add(mesh);
-    objects[3].radius = 1;                                          // sphere around for collisions
+    objects[3].radius = 0.7;                                          // sphere around for collisions
 
     geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);      // torus knot
     mesh = new THREE.Mesh(geometry, material7);
@@ -392,7 +392,7 @@ function checkCollisions(){
             collision.action = true;
             collision.number = i;
             collision.phase1 = true;
-            if(vectorClaw.x < 0){
+            if(vectorClaw.x < vectorClaw.z){
                 collision.rotation = true;
             }else{
                 collision.rotation = false;
@@ -423,9 +423,100 @@ function cancelAnimation(){
 /* HANDLE COLLISIONS */
 ///////////////////////
 
-// not needed for this project
+/* Function that handles the collision and makes the animation */
 function handleCollisions(){
     'use strict';
+
+    //phase 1 (abrir), phase 2 (fechar), phase 3 (subir e colocar na posisao certa), phase 4 (descer), phase 5 (limpar o objeto)
+    var vectorClaw= new THREE.Vector3();
+    claw.getWorldPosition(vectorClaw);          // position of the claw (initial position) 
+
+    if(!collision.action){
+        return;
+    }
+
+    if(collision.phase1){           // open the claw
+        console.log("phase1");
+        if(claw_rotation > -200*c){
+            claw.userData.rotateOut = true;
+        } else {
+            claw.userData.rotateOut = false;
+            collision.phase1 = false;
+            collision.phase2 = true;
+        }
+    }
+    if(collision.phase2){           // close the claw
+        console.log("pashe2");
+        if(claw_rotation < 200*c){
+            claw.userData.rotateIn = true;
+            if(vectorClaw.y > 4)
+                claw.userData.down = true;
+        } else {
+            claw.userData.rotateIn = false;
+            claw.userData.down = false;
+            collision.phase2 = false;
+            collision.phase3 = true;
+
+        }
+    }
+
+    if(collision.phase3){
+        console.log("pashe3");
+        if(vectorClaw.y < 7){
+            claw.userData.up = true;
+            objects[collision.number].position.y += 5 * delta;      // go to the right height (up)
+        }else{
+            claw.userData.up = false;
+        }
+        if(car.position.z < 10){                // go to the right position
+            car.userData.forwards = true;
+        }else{
+            car.userData.forwards = false;
+        }
+        if(collision.rotation && car.position.z >= 9.5){
+            crane.userData.rot_pos = true;
+        }if(!collision.rotation && car.position.z >= 9.5){
+            crane.userData.rot_neg = true;
+        }
+        if(vectorClaw.z > 6.5 && vectorClaw.z < 7.5 && vectorClaw.x > 6.5 && vectorClaw.x < 7.5){
+            crane.userData.rot_pos = false;
+            crane.userData.rot_neg = false;
+            car.userData.forwards = false;
+            claw.userData.up = false;
+            collision.phase3 = false;
+            collision.phase4 = true;
+        }
+        objects[collision.number].position.z = vectorClaw.z;
+        objects[collision.number].position.x = vectorClaw.x;
+    }
+
+    if(collision.phase4){               // go to the right height (down)
+        console.log("pashe2");
+        if(vectorClaw.y > 3){
+            claw.userData.down = true;
+            claw.userData.rotateOut = true;
+            objects[collision.number].position.y-=5 * delta;
+        }
+        else{
+            claw.userData.rotateOut = false;
+            claw.userData.down = false;
+            collision.phase4 = false;
+            collision.phase5 = true;
+        } 
+    }
+
+    if(collision.phase5){               // release the object and remove it
+        
+        if(objects[collision.number].position.y > 1)
+            objects[collision.number].position.y -= 5 * delta;
+        else{
+            objects[collision.number].position.y = -20;
+            scene.remove(objects[collision.number]);
+            collision.action = false;
+            collision.phase5 = false;
+            collision.number = -1;
+        }
+    }
 }
 
 ////////////
@@ -435,7 +526,6 @@ function handleCollisions(){
 function update(){
     'use strict';
     
-    var delta = clock.getDelta();
     // Crane Controls
     if (crane.userData.rot_pos) {                   // pressing 'w'
         pos_rotation.style.color = 'lightgreen';    // hud  
@@ -544,84 +634,7 @@ function update(){
     }
 
     checkCollisions();
-    //phase 1 (abrir), phase 2 (fechar), phase 3 (subir e colocar na posisao certa), phase 4 (descer), phase 5 (limpar o objeto)
-    var vectorClaw= new THREE.Vector3();
-    claw.getWorldPosition(vectorClaw);          // position of the claw (initial position) 
-
-    if(collision.phase1){           // open the claw
-        if(claw_rotation > -200*c){
-            claw.userData.rotateOut = true;
-        } else {
-            claw.userData.rotateOut = false;
-            collision.phase1 = false;
-            collision.phase2 = true;
-        }
-    }
-    if(collision.phase2){           // close the claw
-        if(claw_rotation < 200*c){
-            claw.userData.rotateIn = true;
-            if(vectorClaw.y > 4)
-                claw.userData.down = true;
-        } else {
-            claw.userData.rotateIn = false;
-            claw.userData.down = false;
-            collision.phase2 = false;
-            collision.phase3 = true;
-
-        }
-    }
-
-    if(collision.phase3){
-        if(vectorClaw.y < 7){
-            claw.userData.up = true;
-            objects[collision.number].position.y += 5 * delta;      // go to the right height (up)
-        }else{
-            claw.userData.up = false;
-        }
-        if(car.position.z < 10){                // go to the right position
-            car.userData.forwards = true;
-        }else{
-            car.userData.forwards = false;
-        }
-        if(collision.rotation && car.position.z > 10){
-            crane.userData.rot_pos = true;
-        }if(!collision.rotation && car.position.z > 10){
-            crane.userData.rot_neg = true;
-        }
-        if(vectorClaw.z > 6.5 && vectorClaw.z < 7.5 && vectorClaw.x > 6.5 && vectorClaw.x < 7.5){
-            crane.userData.rot_pos = false;
-            crane.userData.rot_neg = false;
-            car.userData.forwards = false;
-            claw.userData.up = false;
-            collision.phase3 = false;
-            collision.phase4 = true;
-        }
-        objects[collision.number].position.z = vectorClaw.z;
-        objects[collision.number].position.x = vectorClaw.x;
-    }
-
-    if(collision.phase4){               // go to the right height (down)
-        if(vectorClaw.y > 4){
-            claw.userData.down = true;
-            objects[collision.number].position.y-=5 * delta;
-        }else{
-            claw.userData.down = false;
-            collision.phase4 = false;
-            collision.phase5 = true;
-        } 
-    }
-
-    if(collision.phase5){               // release the object and remove it
-        if(objects[collision.number].position.y > 0)
-            objects[collision.number].position.y -= 5 * delta;
-        else{
-            objects[collision.number].position.y = -20;
-            scene.remove(objects[collision.number]);
-            collision.action = false;
-            collision.phase5 = false;
-            collision.number = -1;
-        }
-    }
+    handleCollisions();
     
 }
 
@@ -660,6 +673,9 @@ function init() {
 /////////////////////
 function animate() {
     'use strict';
+
+    delta = clock.getDelta();
+
     update();
     render();
 
@@ -710,7 +726,11 @@ function onKeyDown(e) {
         material2.wireframe = !material2.wireframe;        
         material3.wireframe = !material3.wireframe;        
         material4.wireframe = !material4.wireframe;        
-        material5.wireframe = !material5.wireframe;        
+        material5.wireframe = !material5.wireframe;
+        material6.wireframe = !material6.wireframe;
+        material7.wireframe = !material7.wireframe;
+        material8.wireframe = !material8.wireframe;
+        material9.wireframe = !material9.wireframe;
         break;
     case 81: //'q'
         if(!collision.action)
