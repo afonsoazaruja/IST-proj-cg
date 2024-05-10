@@ -81,7 +81,6 @@ function createPersepectiveCamera(id,x,y,z) {
     cam.lookAt(scene.position);
 
     cameras[id] = cam;
-    cam.lookAt(scene.position);
 }
 
 function createOrthographicCamera(id,x,y,z) {
