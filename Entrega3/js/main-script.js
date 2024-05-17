@@ -38,11 +38,12 @@ function createScene() {
     scene.background = color;
     scene.add(new THREE.AxesHelper(10));
     createPodium();
-    scene.add(podium);
-
     createInnerRing();
     createMiddleRing();
     createOuterRing();
+    createSkydome(scene);
+    
+    scene.add(podium);
 }
 
 
@@ -58,6 +59,18 @@ function createCamera(x, y, z) {
     cam.position.z = z;
 
     cam.lookAt(scene.position);
+
+    // Initialize OrbitControls
+    const controls = new OrbitControls(cam, renderer.domElement);
+
+    // Optional: Set some properties for better control
+    controls.enableDamping = true; // Enable damping (inertia)
+    controls.dampingFactor = 0.25; // Damping factor
+    controls.screenSpacePanning = false; // Disable screen space panning
+    controls.minDistance = 5; // Minimum distance for zoom
+    controls.maxDistance = 50; // Maximum distance for zoom
+    controls.maxPolarAngle = Math.PI / 2; // Limit vertical angle
+
 }
 
 /////////////////////
@@ -82,36 +95,52 @@ function addRing(obj, ir, or, pos_x, pos_y, pos_z, material) {
     'use strict';
 
     var ringShape = new THREE.Shape();
-    ringShape.absarc(0, 0, or, 0, ir, false);
+    // Define the outer ring shape
+    ringShape.absarc(0, 0, or, 0, Math.PI * 2, false);
+    
     var holePath = new THREE.Path();
-    holePath.absarc(0, 0, or, 0, ir, true);
+    // Define the inner ring (hole)
+    holePath.absarc(0, 0, ir, 0, Math.PI * 2, true);
     ringShape.holes.push(holePath);
 
     // Define extrude settings
     var extrudeSettings = {
-        steps: 2,
-        depth: 1,
-        bevelEnabled: true,
-        bevelThickness: 0.1,
-        bevelSize: 0.1,
-        bevelSegments: 2
+        steps: 1,
+        depth: 1
     };
 
     // Extrude the shape to create geometry
     var geometry = new THREE.ExtrudeGeometry(ringShape, extrudeSettings);
 
-    mesh.rotateX(Math.PI/2);    
+    var mesh = new THREE.Mesh(geometry, material);
 
-    mesh = new THREE.Mesh(geometry, material);
+    mesh.rotateX(Math.PI / 2);
+
+    podium.add(mesh);
     
-    obj.add(mesh);
-    
-    podium.add(obj);
-    
-    obj.position.x = pos_x;
-    obj.position.y = pos_y;
-    obj.position.z = pos_z;
-    obj.movement = { moving:false, up: true, down: false };
+    obj.position.set(pos_x, pos_y, pos_z);
+    obj.movement = { moving: false, up: true, down: false };
+}
+
+function createSkydome(scene) {
+    const radius = 10;
+    const widthSegments = 32;
+    const heightSegments = 16;
+    const sphereGeometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments, 0, Math.PI * 2, 0, Math.PI / 2);
+
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load('textures/skydome.png');
+
+    const sphereMaterial = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.BackSide
+    });
+
+    const skydome = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+    skydome.position.set(0, 0, 0);
+
+    scene.add(skydome);
 }
 
 function createPodium() {
@@ -131,7 +160,7 @@ function createInnerRing() {
 
     innerRing = new THREE.Object3D();
     
-    addRing(innerRing, c, 2*c, 0, 0, 0, material2); // add innerRing
+    addRing(innerRing, c, 5*c/2, 0, 0, 0, material2); // add innerRing
 } 
 
 function createMiddleRing() {
@@ -139,7 +168,7 @@ function createMiddleRing() {
 
     middleRing = new THREE.Object3D();
     
-    addRing(middleRing, 2*c, 3*c, 0, 0, 0, material3); // add middleRing
+    addRing(middleRing, 5*c/2, 4*c, 0, 0, 0, material3); // add middleRing
 }
 
 function createOuterRing() {
@@ -147,13 +176,71 @@ function createOuterRing() {
 
     outerRing = new THREE.Object3D();
     
-    addRing(outerRing, 3*c, 4*c, 0, 0, 0, material4); // add outerRing
+    addRing(outerRing, 4*c, 11*c/2, 0, 0, 0, material4); // add outerRing
+}
+
+function createObjects() {
+    'use strict';
+    
+    for (let i = 0; i < 8; i++) {
+        objects[i] = new THREE.Object3D();
+        innerMesh.add(objects[i]);
+    }
+
+    addCube(objects[0], 1, 1, 1, 0, 0, 0, material6);               // cube
+    objects[0].radius = 0.4;                             // sphere around for collisions
+    
+    geometry = new THREE.DodecahedronGeometry(1);                   // dodecahedron
+    mesh = new THREE.Mesh(geometry, material9);
+    mesh.position.set(0, 0, 0);
+    objects[1].add(mesh);
+    objects[1].radius = 1;                                          // sphere around for collisions
+
+    geometry = new THREE.IcosahedronGeometry(1);                    // icosahedron
+    mesh = new THREE.Mesh(geometry, material3);
+    mesh.position.set(0, 0, 0);
+    objects[2].add(mesh);
+    objects[2].radius = 1;                                          // sphere around for collisions
+
+    geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);          // torus
+    mesh = new THREE.Mesh(geometry, material8);
+    mesh.position.set(0, 0, 0);
+    objects[3].add(mesh);
+    objects[3].radius = 0.7;                                          // sphere around for collisions
+
+    geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);      // torus knot
+    mesh = new THREE.Mesh(geometry, material7);
+    mesh.position.set(0, 0, 0);
+    objects[4].add(mesh);
+    objects[4].radius = 1;                                          // sphere around for collisions
+
+    // positioning each object
+    objects[0].position.x = -5;
+    objects[0].position.y = 0;
+    objects[0].position.z = 4;
+
+    objects[1].position.x = -3;
+    objects[1].position.y = 0.5;
+    objects[1].position.z = -4;
+
+    objects[2].position.x = -7;
+    objects[2].position.y = 0.3;
+    objects[2].position.z = 7;
+
+    objects[3].position.x = 1;
+    objects[3].position.y = 0.2;
+    objects[3].position.z = -7;
+
+    objects[4].position.x = 5;
+    objects[4].position.y = 0.5;
+    objects[4].position.z = 2;
 }
 
 //////////////////////
 /* CHECK COLLISIONS */
 //////////////////////
 
+// no collisions in this project
 function checkCollisions(){
     'use strict';
 
@@ -163,6 +250,7 @@ function checkCollisions(){
 /* HANDLE COLLISIONS */
 ///////////////////////
 
+// no collisions in this project
 function handleCollisions(){
     'use strict';
 
@@ -176,14 +264,14 @@ function update(){
     'use strict';
     if(innerRing.movement.moving){
         if (innerRing.movement.up){
-            innerRing.position += 0.01;
+            innerRing.position += 0.5;
             if(innerRing.position >= 10){
                 innerRing.movement.up = false;
                 innerRing.movement.down = true;
             }
         }
         if(innerRing.movement.down){
-            innerRing.position -= 0.01;
+            innerRing.position -= 0.5;
             if(innerRing.position <= 0){
                 innerRing.movement.down = false;
                 innerRing.movement.up = true;
@@ -192,14 +280,14 @@ function update(){
     }
     if(middleRing.movement.moving){
         if (middleRing.movement.up){
-            middleRing.position += 0.01;
+            middleRing.position += 0.5;
             if(middleRing.position >= 10){
                 middleRing.movement.up = false;
                 middleRing.movement.down = true;
             }
         }
         if(middleRing.movement.down){
-            middleRing.position -= 0.01;
+            middleRing.position -= 0.5;
             if(middleRing.position <= 0){
                 middleRing.movement.down = false;
                 middleRing.movement.up = true;
@@ -209,14 +297,14 @@ function update(){
     
     if(outerRing.movement.moving){
         if (outerRing.movement.up){
-            outerRing.position += 0.01;
+            outerRing.position += 0.5;
             if(outerRing.position >= 10){
                 outerRing.movement.up = false;
                 outerRing.movement.down = true;
             }
         }
         if(outerRing.movement.down){
-            outerRing.position -= 0.01;
+            outerRing.position -= 0.5;
             if(outerRing.position <= 0){
                 outerRing.movement.down = false;
                 outerRing.movement.up = true;
@@ -252,7 +340,7 @@ function init() {
     document.body.appendChild(renderer.domElement);
 
     createScene();
-    createCamera(10, 10, 10);
+    createCamera(0, 10, 0);
     
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
@@ -290,12 +378,15 @@ function onKeyDown(e) {
     switch (e.keyCode) {
     case 49: //'1'
         innerRing.moving = true;
+        console.log('1');   
         break;
     case 50: //'2'
         middleRing.moving = true;
+        console.log('2');
         break;
     case 51: //'3'
         outerRing.moving = true;
+        console.log('3');
         break;
     }
 
