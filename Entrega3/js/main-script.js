@@ -9,7 +9,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 //////////////////////
 
 var podium, innerRing, middleRing, outerRing;
-var scene, renderer, geometry, geo, mesh;
+var scene, renderer, geometry, mesh;
 
 // materials
 var material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D}); // gold
@@ -22,7 +22,7 @@ var material7 = new THREE.MeshBasicMaterial({ color: 0x008000}); // dark green
 var material8 = new THREE.MeshBasicMaterial({ color: 0xBC0000}); // red
 var material9 = new THREE.MeshBasicMaterial({ color: 0x6D3600}); // brown
 
-var c=1;
+var c=1, s=0.1;
 
 var cam;
 
@@ -36,14 +36,12 @@ function createScene() {
     const color = new THREE.Color( 'skyblue' );
     scene = new THREE.Scene();
     scene.background = color;
-    scene.add(new THREE.AxesHelper(10));
+    scene.add(new THREE.AxesHelper(50));
     createPodium();
     createInnerRing();
     createMiddleRing();
     createOuterRing();
-    createSkydome(scene);
-    
-    scene.add(podium);
+    createSkydome();
 }
 
 
@@ -70,7 +68,6 @@ function createCamera(x, y, z) {
     controls.minDistance = 5; // Minimum distance for zoom
     controls.maxDistance = 50; // Maximum distance for zoom
     controls.maxPolarAngle = Math.PI / 2; // Limit vertical angle
-
 }
 
 /////////////////////
@@ -116,13 +113,12 @@ function addRing(obj, ir, or, pos_x, pos_y, pos_z, material) {
 
     mesh.rotateX(Math.PI / 2);
 
-    podium.add(mesh);
-    
+    obj.add(mesh);
     obj.position.set(pos_x, pos_y, pos_z);
     obj.movement = { moving: false, up: true, down: false };
 }
 
-function createSkydome(scene) {
+function createSkydome() {
     const radius = 10;
     const widthSegments = 32;
     const heightSegments = 16;
@@ -153,14 +149,19 @@ function createPodium() {
     podium.position.x = 0;
     podium.position.y = 0;
     podium.position.z = 0;
+
+    scene.add(podium);
 }
 
 function createInnerRing() {
     'use strict';
 
     innerRing = new THREE.Object3D();
-    
-    addRing(innerRing, c, 5*c/2, 0, 0, 0, material2); // add innerRing
+    innerRing.movement = { moving: false, up: false, down: false }; 
+
+    addRing(innerRing, c, 5*c/2, 0, c, 0, material2); // add innerRing
+
+    scene.add(innerRing);
 } 
 
 function createMiddleRing() {
@@ -168,7 +169,9 @@ function createMiddleRing() {
 
     middleRing = new THREE.Object3D();
     
-    addRing(middleRing, 5*c/2, 4*c, 0, 0, 0, material3); // add middleRing
+    addRing(middleRing, 5*c/2, 4*c, 0, 2*c, 0, material3); // add middleRing
+
+    scene.add(middleRing);
 }
 
 function createOuterRing() {
@@ -176,7 +179,9 @@ function createOuterRing() {
 
     outerRing = new THREE.Object3D();
     
-    addRing(outerRing, 4*c, 11*c/2, 0, 0, 0, material4); // add outerRing
+    addRing(outerRing, 4*c, 11*c/2, 0, 3*c, 0, material4); // add outerRing
+
+    scene.add(outerRing);
 }
 
 function createObjects() {
@@ -262,17 +267,22 @@ function handleCollisions(){
 
 function update(){
     'use strict';
+
+    innerRing.rotation.y += s/4;
+    middleRing.rotation.y -= s/3;
+    outerRing.rotation.y += s/2;
+
     if(innerRing.movement.moving){
         if (innerRing.movement.up){
-            innerRing.position += 0.5;
-            if(innerRing.position >= 10){
+            innerRing.position.y += s;
+            if(innerRing.position.y >= 10){
                 innerRing.movement.up = false;
                 innerRing.movement.down = true;
             }
         }
         if(innerRing.movement.down){
-            innerRing.position -= 0.5;
-            if(innerRing.position <= 0){
+            innerRing.position.y -= s;
+            if(innerRing.position.y <= 0){
                 innerRing.movement.down = false;
                 innerRing.movement.up = true;
             }
@@ -280,15 +290,15 @@ function update(){
     }
     if(middleRing.movement.moving){
         if (middleRing.movement.up){
-            middleRing.position += 0.5;
-            if(middleRing.position >= 10){
+            middleRing.position.y += s;
+            if(middleRing.position.y >= 10){
                 middleRing.movement.up = false;
                 middleRing.movement.down = true;
             }
         }
         if(middleRing.movement.down){
-            middleRing.position -= 0.5;
-            if(middleRing.position <= 0){
+            middleRing.position.y -= s;
+            if(middleRing.position.y <= 0){
                 middleRing.movement.down = false;
                 middleRing.movement.up = true;
             }
@@ -297,22 +307,20 @@ function update(){
     
     if(outerRing.movement.moving){
         if (outerRing.movement.up){
-            outerRing.position += 0.5;
-            if(outerRing.position >= 10){
+            outerRing.position.y += s;
+            if(outerRing.position.y >= 10){
                 outerRing.movement.up = false;
                 outerRing.movement.down = true;
             }
         }
         if(outerRing.movement.down){
-            outerRing.position -= 0.5;
-            if(outerRing.position <= 0){
+            outerRing.position.y -= s;
+            if(outerRing.position.y <= 0){
                 outerRing.movement.down = false;
                 outerRing.movement.up = true;
             }
         }
     }
-    
-
 }
 
 /////////////
@@ -377,19 +385,18 @@ function onKeyDown(e) {
 
     switch (e.keyCode) {
     case 49: //'1'
-        innerRing.moving = true;
+        innerRing.movement.moving = true;
         console.log('1');   
         break;
     case 50: //'2'
-        middleRing.moving = true;
+        middleRing.movement.moving = true;
         console.log('2');
         break;
     case 51: //'3'
-        outerRing.moving = true;
+        outerRing.movement.moving = true;
         console.log('3');
         break;
     }
-
 }
 
 ///////////////////////
@@ -401,15 +408,15 @@ function onKeyUp(e){
 
     switch (e.keyCode) {
     case 49: //'1'
-        innerRing.moving = false;
+        innerRing.movement.moving = false;
         break;
 
     case 50: //'2'
-        middleRing.moving = false;
+        middleRing.movement.moving = false;
         break;
 
     case 51: //'3'
-        outerRing.moving = false;
+        outerRing.movement.moving = false;
         break;
     }
 }
