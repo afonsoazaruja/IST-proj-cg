@@ -10,6 +10,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 var podium, innerRing, middleRing, outerRing;
 var scene, renderer, geometry, mesh;
+var objects = new Array();
 
 // materials
 var material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D}); // gold
@@ -22,7 +23,8 @@ var material7 = new THREE.MeshBasicMaterial({ color: 0x008000}); // dark green
 var material8 = new THREE.MeshBasicMaterial({ color: 0xBC0000}); // red
 var material9 = new THREE.MeshBasicMaterial({ color: 0x6D3600}); // brown
 
-var c=1, s=0.1;
+const c=1, s=0.05, h=7;
+const inc = c/2+(0.375);
 
 var cam;
 
@@ -41,6 +43,7 @@ function createScene() {
     createInnerRing();
     createMiddleRing();
     createOuterRing();
+    createObjects();
     createSkydome();
 }
 
@@ -80,6 +83,15 @@ function createCamera(x, y, z) {
 /* CREATE OBJECT3D(S) */
 ////////////////////////
 
+function addCube(obj, x, y, z, ref_x, ref_y, ref_z, material) {
+    'use strict';
+    
+    geometry = new THREE.BoxGeometry(x, y, z);
+    mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(ref_x, ref_y, ref_z);
+    obj.add(mesh);
+}
+
 function addCylinder(obj, rt, rb, h, material) {
     'use strict';
 
@@ -93,6 +105,7 @@ function addRing(obj, ir, or, pos_x, pos_y, pos_z, material) {
 
     var ringShape = new THREE.Shape();
     // Define the outer ring shape
+    
     ringShape.absarc(0, 0, or, 0, Math.PI * 2, false);
     
     var holePath = new THREE.Path();
@@ -102,7 +115,7 @@ function addRing(obj, ir, or, pos_x, pos_y, pos_z, material) {
 
     // Define extrude settings
     var extrudeSettings = {
-        steps: 1,
+        steps: 100,
         depth: 1
     };
 
@@ -147,7 +160,7 @@ function createPodium() {
     addCylinder(podium, c, c, c, material1); // add podium
 
     podium.position.x = 0;
-    podium.position.y = 0;
+    podium.position.y = c/2;
     podium.position.z = 0;
 
     scene.add(podium);
@@ -162,7 +175,7 @@ function createInnerRing() {
     addRing(innerRing, c, 5*c/2, 0, c, 0, material2); // add innerRing
 
     scene.add(innerRing);
-} 
+}
 
 function createMiddleRing() {
     'use strict';
@@ -187,58 +200,67 @@ function createOuterRing() {
 function createObjects() {
     'use strict';
     
-    for (let i = 0; i < 8; i++) {
-        objects[i] = new THREE.Object3D();
-        innerMesh.add(objects[i]);
+    var j = 0; 
+    while (j < 3) {
+
+        for (let i = 0; i < 8; i++) {
+            objects[i] = new THREE.Object3D();
+            if (j == 0) {
+                innerRing.add(objects[i]);
+            }
+            else if (j == 1) {
+                middleRing.add(objects[i]);
+            }
+            else {
+                outerRing.add(objects[i]);
+            }
+        }
+
+        addCube(objects[0], 0.3, 0.3, 0.3, 0, 0, 0, material6);               // cube
+        
+        geometry = new THREE.DodecahedronGeometry(0.3);                   // dodecahedron
+        mesh = new THREE.Mesh(geometry, material9);
+        mesh.position.set(0, 0, 0);
+        objects[1].add(mesh);
+        
+        geometry = new THREE.IcosahedronGeometry(0.3);                    // icosahedron
+        mesh = new THREE.Mesh(geometry, material3);
+        mesh.position.set(0, 0, 0);
+        objects[2].add(mesh);
+        
+        geometry = new THREE.TorusGeometry(0.1, 0.2, 16, 100);          // torus
+        mesh = new THREE.Mesh(geometry, material8);
+        mesh.position.set(0, 0, 0);
+        objects[3].add(mesh);
+        
+        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);      // torus knot
+        mesh = new THREE.Mesh(geometry, material7);
+        mesh.position.set(0, 0, 0);
+        objects[4].add(mesh);
+        
+        // positioning each object
+        objects[0].position.x = j+inc + c;
+        objects[0].position.y = c/2;
+        objects[0].position.z = 0;
+        
+        objects[1].position.x = -(j+inc + c);
+        objects[1].position.y = c/2;
+        objects[1].position.z = 0;
+        
+        objects[2].position.x = 0;
+        objects[2].position.y = c/2;
+        objects[2].position.z = j+inc + c;
+        
+        objects[3].position.x = 0;
+        objects[3].position.y = c/2;
+        objects[3].position.z = -(j+inc + c);
+        
+        objects[4].position.x = j+(inc/4)+ c;
+        objects[4].position.y = c/2;
+        objects[4].position.z = j+(inc/4)+ c;
+        
+        j = j + 1;
     }
-
-    addCube(objects[0], 1, 1, 1, 0, 0, 0, material6);               // cube
-    objects[0].radius = 0.4;                             // sphere around for collisions
-    
-    geometry = new THREE.DodecahedronGeometry(1);                   // dodecahedron
-    mesh = new THREE.Mesh(geometry, material9);
-    mesh.position.set(0, 0, 0);
-    objects[1].add(mesh);
-    objects[1].radius = 1;                                          // sphere around for collisions
-
-    geometry = new THREE.IcosahedronGeometry(1);                    // icosahedron
-    mesh = new THREE.Mesh(geometry, material3);
-    mesh.position.set(0, 0, 0);
-    objects[2].add(mesh);
-    objects[2].radius = 1;                                          // sphere around for collisions
-
-    geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);          // torus
-    mesh = new THREE.Mesh(geometry, material8);
-    mesh.position.set(0, 0, 0);
-    objects[3].add(mesh);
-    objects[3].radius = 0.7;                                          // sphere around for collisions
-
-    geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 100, 16);      // torus knot
-    mesh = new THREE.Mesh(geometry, material7);
-    mesh.position.set(0, 0, 0);
-    objects[4].add(mesh);
-    objects[4].radius = 1;                                          // sphere around for collisions
-
-    // positioning each object
-    objects[0].position.x = -5;
-    objects[0].position.y = 0;
-    objects[0].position.z = 4;
-
-    objects[1].position.x = -3;
-    objects[1].position.y = 0.5;
-    objects[1].position.z = -4;
-
-    objects[2].position.x = -7;
-    objects[2].position.y = 0.3;
-    objects[2].position.z = 7;
-
-    objects[3].position.x = 1;
-    objects[3].position.y = 0.2;
-    objects[3].position.z = -7;
-
-    objects[4].position.x = 5;
-    objects[4].position.y = 0.5;
-    objects[4].position.z = 2;
 }
 
 //////////////////////
@@ -275,14 +297,14 @@ function update(){
     if(innerRing.movement.moving){
         if (innerRing.movement.up){
             innerRing.position.y += s;
-            if(innerRing.position.y >= 10){
+            if(innerRing.position.y >= h){
                 innerRing.movement.up = false;
                 innerRing.movement.down = true;
             }
         }
         if(innerRing.movement.down){
             innerRing.position.y -= s;
-            if(innerRing.position.y <= 0){
+            if(innerRing.position.y <= c/2){
                 innerRing.movement.down = false;
                 innerRing.movement.up = true;
             }
@@ -291,14 +313,14 @@ function update(){
     if(middleRing.movement.moving){
         if (middleRing.movement.up){
             middleRing.position.y += s;
-            if(middleRing.position.y >= 10){
+            if(middleRing.position.y >= h){
                 middleRing.movement.up = false;
                 middleRing.movement.down = true;
             }
         }
         if(middleRing.movement.down){
             middleRing.position.y -= s;
-            if(middleRing.position.y <= 0){
+            if(middleRing.position.y <= c/2){
                 middleRing.movement.down = false;
                 middleRing.movement.up = true;
             }
@@ -308,14 +330,14 @@ function update(){
     if(outerRing.movement.moving){
         if (outerRing.movement.up){
             outerRing.position.y += s;
-            if(outerRing.position.y >= 10){
+            if(outerRing.position.y >= h){
                 outerRing.movement.up = false;
                 outerRing.movement.down = true;
             }
         }
         if(outerRing.movement.down){
             outerRing.position.y -= s;
-            if(outerRing.position.y <= 0){
+            if(outerRing.position.y <= c/2){
                 outerRing.movement.down = false;
                 outerRing.movement.up = true;
             }
@@ -385,16 +407,13 @@ function onKeyDown(e) {
 
     switch (e.keyCode) {
     case 49: //'1'
-        innerRing.movement.moving = true;
-        console.log('1');   
+        innerRing.movement.moving = !innerRing.movement.moving;
         break;
     case 50: //'2'
-        middleRing.movement.moving = true;
-        console.log('2');
+        middleRing.movement.moving = !middleRing.movement.moving;
         break;
     case 51: //'3'
-        outerRing.movement.moving = true;
-        console.log('3');
+        outerRing.movement.moving = !outerRing.movement.moving;
         break;
     }
 }
@@ -408,15 +427,12 @@ function onKeyUp(e){
 
     switch (e.keyCode) {
     case 49: //'1'
-        innerRing.movement.moving = false;
         break;
 
     case 50: //'2'
-        middleRing.movement.moving = false;
         break;
 
     case 51: //'3'
-        outerRing.movement.moving = false;
         break;
     }
 }
