@@ -260,7 +260,7 @@ function createObjects() {
         objects[0+8*j].position.y = c/2;
         objects[0+8*j].position.z = 0;
         
-        objects[1+8*j].position.x = -c-r/2-(j*r);
+        objects[1+8*j].position.x = -(c+r/2+(j*r));
         objects[1+8*j].position.y = c/2;
         objects[1+8*j].position.z = 0;
         
@@ -270,7 +270,7 @@ function createObjects() {
         
         objects[3+8*j].position.x = 0;
         objects[3+8*j].position.y = c/2;
-        objects[3+8*j].position.z = -c-r/2-(j*r);
+        objects[3+8*j].position.z = -(c+r/2+(j*r));
         
         objects[4+8*j].position.x = (Math.sqrt(2)/2*(c+r/2+j*r));
         objects[4+8*j].position.y = c/2;
@@ -320,9 +320,9 @@ function update(){
     'use strict';
 
     // Ring rotation
-    // innerRing.rotation.y += s/10;
-    // middleRing.rotation.y -= s/8;
-    // outerRing.rotation.y += s/6;
+    innerRing.rotation.y += s/10;
+    middleRing.rotation.y -= s/8;
+    outerRing.rotation.y += s/6;
 
     // Ring movement
     if(innerRing.movement.moving){
