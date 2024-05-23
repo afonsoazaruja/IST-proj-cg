@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import * as Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.js';
 
 //////////////////////
 /* GLOBAL VARIABLES */
@@ -10,6 +11,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 var podium, innerRing, middleRing, outerRing;
 var scene, renderer, geometry, mesh;
+//var trefoilKnot, conicSpiral, sphere, torus, helix, ellipticParaboloid, hyperbolicParaboloid;
 var objects = new Array();
 
 // materials
@@ -19,13 +21,18 @@ var material3 = new THREE.MeshBasicMaterial({ color: 0xFF9933}); // orange
 var material4 = new THREE.MeshBasicMaterial({ color: 0xFFFFFF}); // white
 var material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4}); // grey steel
 var material6 = new THREE.MeshBasicMaterial({ color: 0x00007E}); // dark blue
-var material7 = new THREE.MeshBasicMaterial({ color: 0x008000}); // dark green
-var material8 = new THREE.MeshBasicMaterial({ color: 0xBC0000}); // red
-var material9 = new THREE.MeshBasicMaterial({ color: 0x6D3600}); // brown
+var material7 = new THREE.MeshToonMaterial({ color: 0x008000,side:THREE.DoubleSide}); // dark green
+var material8 = new THREE.MeshNormalMaterial({side:THREE.DoubleSide}); // red
+var material9 = new THREE.MeshLambertMaterial({ color: 0x6D3600, side:THREE.DoubleSide}); // brown
+var material10 = new THREE.MeshPhongMaterial({color:0xff0000, side:THREE.DoubleSide});
 
 const c=1, s=0.05, h=7, r=1.5;
 
 var cam;
+
+var x, y, z;
+
+var ambientLight, directionalLight;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -47,6 +54,8 @@ function createScene() {
     innerRing.add(new THREE.AxesHelper(8));
     middleRing.add(new THREE.AxesHelper(8));
     outerRing.add(new THREE.AxesHelper(8));
+    scene.add(ambientLight);
+    scene.add(directionalLight);
 }
 
 
@@ -79,20 +88,12 @@ function createCamera(x, y, z) {
 /* CREATE LIGHT(S) */
 /////////////////////
 
-
+ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
 
 ////////////////////////
 /* CREATE OBJECT3D(S) */
 ////////////////////////
-
-function addCube(obj, x, y, z, ref_x, ref_y, ref_z, material) {
-    'use strict';
-    
-    geometry = new THREE.BoxGeometry(x, y, z);
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(ref_x, ref_y, ref_z);
-    obj.add(mesh);
-}
 
 function addCylinder(obj, rt, rb, h, material) {
     'use strict';
@@ -131,6 +132,96 @@ function addRing(obj, ir, or, pos_x, pos_y, pos_z, material) {
     obj.add(mesh);
     obj.position.set(pos_x, pos_y, pos_z);
     obj.movement = { moving: false, up: true, down: false };
+}
+
+// Parametric Functions Constructors
+function kleinFunction(u, v, target) {
+    u *= Math.PI;
+    v *= 2 * Math.PI;
+    u = u * 2;
+    if (u < Math.PI) {
+        x = 3 * Math.cos(u) * (1 + Math.sin(u)) + 2 * (1 - Math.cos(u / 2)) * Math.cos(u) * Math.cos(v);
+        z = -8 * Math.sin(u / 2) - 2 * (1 - Math.cos(u / 2)) * Math.sin(u) * Math.sin(v);
+    } else {
+        x = 3 * Math.cos(u) * (1 + Math.sin(u)) + 2 * (1 - Math.cos(u / 2)) * Math.cos(v + Math.PI);
+        z = -8 * Math.sin(u / 2);
+    }
+    y = -2 * (1 - Math.cos(u / 2)) * Math.sin(v);
+    target.set(x, y, z);
+}
+
+function torus(u, v, target) {
+    const r = 1;
+    const R = 2;
+    const theta = 2 * Math.PI * u;
+    const phi = 2 * Math.PI * v;
+    x = (R + r * Math.cos(phi)) * Math.cos(theta);
+    y = (R + r * Math.cos(phi)) * Math.sin(theta);
+    z = r * Math.sin(phi);
+    target.set(x, y, z);
+}
+
+function hyperbolicParaboloid(u, v, target) {
+    x = u * 2 - 1;
+    y = v * 2 - 1;
+    z = x * x - y * y;
+    target.set(x, y, z);
+}
+
+function sphere(u, v, target) {
+    var u = (u * 2 * Math.PI) - Math.PI;
+    var v = (v * 2 * Math.PI) - Math.PI;
+
+    var x = Math.sin(u) * Math.sin(v) + 0.05 * Math.cos(20 * v);
+    var y = Math.cos(u) * Math.sin(v) + 0.05 * Math.cos(20 * u);
+    var z = Math.cos(v);
+
+
+    target.set(x, y, z);
+}
+
+function egg(u, v, target) {
+    var u = u * 2 * Math.PI;
+    var v = (v * 2 * Math.PI) - Math.PI;
+
+    var x = Math.cos(u);
+    var y = Math.sin(u) + Math.cos(v);
+    var z = Math.sin(v);
+
+
+    target.set(x, y, z);
+}
+
+function curvedring(u, v, target) {
+    var a = 3;
+    var n = 3;
+    var m = 1;
+
+    var u = u * 4 * Math.PI;
+    var v = v * 2 * Math.PI;
+
+    var x = (a + Math.cos(n * u / 2.0) * Math.sin(v) - Math.sin(n * u / 2.0) * Math.sin(2 * v)) * Math.cos(m * u / 2.0);
+    var y = (a + Math.cos(n * u / 2.0) * Math.sin(v) - Math.sin(n * u / 2.0) * Math.sin(2 * v)) * Math.sin(m * u / 2.0);
+    var z = Math.sin(n * u / 2.0) * Math.sin(v) + Math.cos(n * u / 2.0) * Math.sin(2 * v);
+
+    target.set(x, y, z);
+}
+
+function catenoid(u, v, target) {
+    const a = 1;
+    const x = a * Math.cosh(v * 2 - 1) * Math.cos(u * 2 * Math.PI);
+    const y = a * Math.cosh(v * 2 - 1) * Math.sin(u * 2 * Math.PI);
+    const z = v * 4 - 2;
+    target.set(x, y, z);
+}
+
+function enneperSurface(u, v, target) {
+    u = (u - 0.5) * 2;
+    v = (v - 0.5) * 2;
+    const x = u - (u ** 3) / 3 + u * v ** 2;
+    const y = v - (v ** 3) / 3 + v * u ** 2;
+    const z = u ** 2 - v ** 2;
+    target.set(x, y, z);
 }
 
 function createSkydome() {
@@ -217,51 +308,64 @@ function createObjects() {
             }
         }
 
-        // cube
-        addCube(objects[0+8*j], 0.3, 0.3, 0.3, 0, 0, 0, material6);
+        // egg
+        geometry = new ParametricGeometry(egg,100,100);
+        mesh = new THREE.Mesh(geometry, material7);
+        mesh.scale.set(0.1, 0.1, 0.1);
+        objects[0+8*j].add(mesh);
+
         
-        // dodecahedron
-        geometry = new THREE.DodecahedronGeometry(0.3);
-        mesh = new THREE.Mesh(geometry, material9);
+        // klein bottle
+        geometry = new ParametricGeometry(kleinFunction, 100, 100);
+        mesh = new THREE.Mesh( geometry, material8);
+        mesh.scale.set(0.08, 0.08, 0.08);
         objects[1+8*j].add(mesh);
         
-        // icosahedron
-        geometry = new THREE.IcosahedronGeometry(0.3);
-        mesh = new THREE.Mesh(geometry, material5);
+       
+        // sphere
+        geometry = new ParametricGeometry(sphere, 200, 10);
+        mesh = new THREE.Mesh( geometry, material10 );
+        mesh.scale.set(0.5, 0.5, 0.5);
         objects[2+8*j].add(mesh);
         
-        // torus
-        geometry = new THREE.TorusGeometry(0.1, 0.2, 16, 100);
-        mesh = new THREE.Mesh(geometry, material8);
+       // catenoid
+        geometry = new ParametricGeometry(catenoid, 100, 100);
+        mesh = new THREE.Mesh( geometry, material10 );
+        mesh.scale.set(0.2, 0.2, 0.2); 
         objects[3+8*j].add(mesh);
         
-        // torus knot
-        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);
-        mesh = new THREE.Mesh(geometry, material7);
+        // torus
+        geometry = new ParametricGeometry(torus, 100, 100);
+        mesh = new THREE.Mesh( geometry, material10 );
+        mesh.scale.set(0.1, 0.1, 0.1); 
         objects[4+8*j].add(mesh);
 
-        // DUPLICATE
-        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);
-        mesh = new THREE.Mesh(geometry, material7);
+        // ennerSurface
+        geometry = new ParametricGeometry(enneperSurface, 100, 100);
+        mesh = new THREE.Mesh( geometry, material10 );
+        mesh.scale.set(0.3, 0.3, 0.3); 
         objects[5+8*j].add(mesh);
 
-        // DUPLICATE
-        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);
-        mesh = new THREE.Mesh(geometry, material7);
+        // hyperbolicParaboloid
+        geometry = new ParametricGeometry(hyperbolicParaboloid, 100, 100);
+        mesh = new THREE.Mesh( geometry, material10 );
+        mesh.scale.set(0.6, 0.6, 0.6);
         objects[6+8*j].add(mesh);
 
-        // DUPLICATE
-        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);
-        mesh = new THREE.Mesh(geometry, material7);
+        // curvedring
+        geometry = new ParametricGeometry(curvedring, 100, 100);
+        mesh = new THREE.Mesh( geometry, material9 );
+        mesh.scale.set(0.1, 0.1, 0.1);
         objects[7+8*j].add(mesh);
         
+    
         // positioning each object
         objects[0+8*j].position.x = c+r/2+(j*r);
-        objects[0+8*j].position.y = c/2;
+        objects[0+8*j].position.y = (c/2);
         objects[0+8*j].position.z = 0;
         
         objects[1+8*j].position.x = -(c+r/2+(j*r));
-        objects[1+8*j].position.y = c/2;
+        objects[1+8*j].position.y = (c/2);
         objects[1+8*j].position.z = 0;
         
         objects[2+8*j].position.x = 0;
@@ -376,9 +480,9 @@ function update(){
     }
 
     // Objects rotation
-    objects.forEach(object => {
+    /*objects.forEach(object => {
         object.rotateY(Math.random()*s);
-    })
+    })*/
 }
 
 /////////////
