@@ -23,8 +23,7 @@ var material7 = new THREE.MeshBasicMaterial({ color: 0x008000}); // dark green
 var material8 = new THREE.MeshBasicMaterial({ color: 0xBC0000}); // red
 var material9 = new THREE.MeshBasicMaterial({ color: 0x6D3600}); // brown
 
-const c=1, s=0.05, h=7;
-const inc = c/2+(0.375);
+const c=1, s=0.05, h=7, r=1.5;
 
 var cam;
 
@@ -38,13 +37,16 @@ function createScene() {
     const color = new THREE.Color( 'skyblue' );
     scene = new THREE.Scene();
     scene.background = color;
-    scene.add(new THREE.AxesHelper(50));
+    scene.add(new THREE.AxesHelper(8));
     createPodium();
     createInnerRing();
     createMiddleRing();
     createOuterRing();
     createObjects();
     createSkydome();
+    innerRing.add(new THREE.AxesHelper(8));
+    middleRing.add(new THREE.AxesHelper(8));
+    outerRing.add(new THREE.AxesHelper(8));
 }
 
 
@@ -202,8 +204,7 @@ function createObjects() {
     
     var j = 0; 
     while (j < 3) {
-
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0+8*j; i < 8+8*j; i++) {
             objects[i] = new THREE.Object3D();
             if (j == 0) {
                 innerRing.add(objects[i]);
@@ -216,50 +217,78 @@ function createObjects() {
             }
         }
 
-        addCube(objects[0], 0.3, 0.3, 0.3, 0, 0, 0, material6);               // cube
+        // cube
+        addCube(objects[0+8*j], 0.3, 0.3, 0.3, 0, 0, 0, material6);
         
-        geometry = new THREE.DodecahedronGeometry(0.3);                   // dodecahedron
+        // dodecahedron
+        geometry = new THREE.DodecahedronGeometry(0.3);
         mesh = new THREE.Mesh(geometry, material9);
-        mesh.position.set(0, 0, 0);
-        objects[1].add(mesh);
+        objects[1+8*j].add(mesh);
         
-        geometry = new THREE.IcosahedronGeometry(0.3);                    // icosahedron
-        mesh = new THREE.Mesh(geometry, material3);
-        mesh.position.set(0, 0, 0);
-        objects[2].add(mesh);
+        // icosahedron
+        geometry = new THREE.IcosahedronGeometry(0.3);
+        mesh = new THREE.Mesh(geometry, material5);
+        objects[2+8*j].add(mesh);
         
-        geometry = new THREE.TorusGeometry(0.1, 0.2, 16, 100);          // torus
+        // torus
+        geometry = new THREE.TorusGeometry(0.1, 0.2, 16, 100);
         mesh = new THREE.Mesh(geometry, material8);
-        mesh.position.set(0, 0, 0);
-        objects[3].add(mesh);
+        objects[3+8*j].add(mesh);
         
-        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);      // torus knot
+        // torus knot
+        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);
         mesh = new THREE.Mesh(geometry, material7);
-        mesh.position.set(0, 0, 0);
-        objects[4].add(mesh);
+        objects[4+8*j].add(mesh);
+
+        // DUPLICATE
+        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);
+        mesh = new THREE.Mesh(geometry, material7);
+        objects[5+8*j].add(mesh);
+
+        // DUPLICATE
+        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);
+        mesh = new THREE.Mesh(geometry, material7);
+        objects[6+8*j].add(mesh);
+
+        // DUPLICATE
+        geometry = new THREE.TorusKnotGeometry(0.1, 0.2, 100, 8);
+        mesh = new THREE.Mesh(geometry, material7);
+        objects[7+8*j].add(mesh);
         
         // positioning each object
-        objects[0].position.x = j+inc + c;
-        objects[0].position.y = c/2;
-        objects[0].position.z = 0;
+        objects[0+8*j].position.x = c+r/2+(j*r);
+        objects[0+8*j].position.y = c/2;
+        objects[0+8*j].position.z = 0;
         
-        objects[1].position.x = -(j+inc + c);
-        objects[1].position.y = c/2;
-        objects[1].position.z = 0;
+        objects[1+8*j].position.x = -c-r/2-(j*r);
+        objects[1+8*j].position.y = c/2;
+        objects[1+8*j].position.z = 0;
         
-        objects[2].position.x = 0;
-        objects[2].position.y = c/2;
-        objects[2].position.z = j+inc + c;
+        objects[2+8*j].position.x = 0;
+        objects[2+8*j].position.y = c/2;
+        objects[2+8*j].position.z = c+r/2+(j*r);
         
-        objects[3].position.x = 0;
-        objects[3].position.y = c/2;
-        objects[3].position.z = -(j+inc + c);
+        objects[3+8*j].position.x = 0;
+        objects[3+8*j].position.y = c/2;
+        objects[3+8*j].position.z = -c-r/2-(j*r);
         
-        objects[4].position.x = j+(inc/4)+ c;
-        objects[4].position.y = c/2;
-        objects[4].position.z = j+(inc/4)+ c;
+        objects[4+8*j].position.x = (Math.sqrt(2)/2*(c+r/2+j*r));
+        objects[4+8*j].position.y = c/2;
+        objects[4+8*j].position.z = (Math.sqrt(2)/2*(c+r/2+j*r));
         
-        j = j + 1;
+        objects[5+8*j].position.x = -(Math.sqrt(2)/2*(c+r/2+j*r));
+        objects[5+8*j].position.y = c/2;
+        objects[5+8*j].position.z = (Math.sqrt(2)/2*(c+r/2+j*r));
+        
+        objects[6+8*j].position.x = (Math.sqrt(2)/2*(c+r/2+j*r));
+        objects[6+8*j].position.y = c/2;
+        objects[6+8*j].position.z = -(Math.sqrt(2)/2*(c+r/2+j*r));
+
+        objects[7+8*j].position.x = -(Math.sqrt(2)/2*(c+r/2+j*r));
+        objects[7+8*j].position.y = c/2;
+        objects[7+8*j].position.z = -(Math.sqrt(2)/2*(c+r/2+j*r));
+        
+        j++;
     }
 }
 
@@ -290,10 +319,12 @@ function handleCollisions(){
 function update(){
     'use strict';
 
-    innerRing.rotation.y += s/4;
-    middleRing.rotation.y -= s/3;
-    outerRing.rotation.y += s/2;
+    // Ring rotation
+    // innerRing.rotation.y += s/10;
+    // middleRing.rotation.y -= s/8;
+    // outerRing.rotation.y += s/6;
 
+    // Ring movement
     if(innerRing.movement.moving){
         if (innerRing.movement.up){
             innerRing.position.y += s;
@@ -343,6 +374,11 @@ function update(){
             }
         }
     }
+
+    // Objects rotation
+    objects.forEach(object => {
+        object.rotateY(Math.random()*s);
+    })
 }
 
 /////////////
