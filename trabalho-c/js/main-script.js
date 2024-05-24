@@ -11,22 +11,12 @@ import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.j
 
 var podium, innerRing, middleRing, outerRing, mobiusStrip;
 var scene, renderer, geometry, mesh;
-//var trefoilKnot, conicSpiral, sphere, torus, helix, ellipticParaboloid, hyperbolicParaboloid;
+
 var objects = new Array();
+var objectsMesh = new Array();
+var ringsMesh = new Array();
 var spotlights = new Array();
 var pointLights = new Array();
-
-// materials
-var material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D}); // gold
-var material2 = new THREE.MeshBasicMaterial({ color: 0x404040}); // grey
-var material3 = new THREE.MeshBasicMaterial({ color: 0xFF9933}); // orange
-var material4 = new THREE.MeshBasicMaterial({ color: 0xFFFFFF}); // white
-var material5 = new THREE.MeshBasicMaterial({ color: 0xB4B4B4}); // grey steel
-var material6 = new THREE.MeshBasicMaterial({ color: 0x00007E}); // dark blue
-var material7 = new THREE.MeshToonMaterial({ color: 0x008000,side:THREE.DoubleSide}); // dark green
-var material8 = new THREE.MeshNormalMaterial({side:THREE.DoubleSide}); // red
-var material9 = new THREE.MeshLambertMaterial({ color: 0x6D3600, side:THREE.DoubleSide}); // brown
-var material10 = new THREE.MeshPhongMaterial({color:0xff0000, side:THREE.DoubleSide});
 
 const c=1, s=2, h=7, r=1.5;
 
@@ -34,12 +24,43 @@ var cam, clock, delta;
 
 var x, y, z;
 
+// lights
 var ambientLight, directionalLight;
+
+// Materials
+var MeshLambertMaterial= 
+[new THREE.MeshLambertMaterial({color: 0xF0E805,side:THREE.DoubleSide}),
+ new THREE.MeshLambertMaterial({color: 0xF4AE04,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0xF87403,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0xFD1D01,side:THREE.DoubleSide}), 
+ new THREE.MeshLambertMaterial({color: 0x7200AB,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0x00AA06,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0xFF00B3,side:THREE.DoubleSide})];
+
+var MeshPhongMaterial=
+[new THREE.MeshPhongMaterial({color: 0xF0E805,shininess:100,side:THREE.DoubleSide}),
+ new THREE.MeshPhongMaterial({color: 0xF4AE04,shininess:100,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0xF87403,shininess:100,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0xFD1D01,shininess:100,side:THREE.DoubleSide}),
+ new THREE.MeshPhongMaterial({color: 0x7200AB,shininess:100,emissive:0x9A00AD,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0x00AA06,shininess:100,emissive: 0x00C210,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0xFF00B3,shininess:100,emissive:0xEB00B2,side:THREE.DoubleSide})];
+
+var MeshToonMaterial=
+[new THREE.MeshToonMaterial({color: 0xF0E805,side:THREE.DoubleSide}),
+ new THREE.MeshToonMaterial({color: 0xF4AE04,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0xF87403,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0xFD1D01,side:THREE.DoubleSide}),
+ new THREE.MeshToonMaterial({color: 0x7200AB,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0x00AA06,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0xFF00B3,side:THREE.DoubleSide})];
+
+var MeshNormalMaterial=
+[new THREE.MeshNormalMaterial({side:THREE.DoubleSide}),
+ new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide}),
+ new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide})];
+
+var MeshBasicMaterial=
+[new THREE.MeshBasicMaterial({color: 0xF0E805,side:THREE.DoubleSide}),
+ new THREE.MeshBasicMaterial({color: 0xF4AE04,side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0xF87403,side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0xFD1D01,side:THREE.DoubleSide}),
+ new THREE.MeshBasicMaterial({color: 0x7200AB, side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0x00AA06,side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0xFF00B3,side:THREE.DoubleSide})];
+
+
+var iluminations = new Array();
+iluminations[0] = true;
+iluminations[1] = MeshLambertMaterial;
 
 /////////////////////
 /* CREATE SCENE(S) */
 /////////////////////
-
 function createScene() {
     'use strict';
     
@@ -133,11 +154,11 @@ function addCylinder(obj, rt, rb, h, material) {
     'use strict';
 
     geometry = new THREE.CylinderGeometry(rt, rb, h);
-    mesh = new THREE.Mesh(geometry, material);
-    obj.add(mesh);
+    ringsMesh[0] = new THREE.Mesh(geometry, material);
+    obj.add(ringsMesh[0]);
 }
 
-function addRing(obj, ir, or, pos_x, pos_y, pos_z, material) {
+function addRing(obj, ir, or, pos_x, pos_y, pos_z, material, index) {
     'use strict';
 
     var ringShape = new THREE.Shape();
@@ -152,6 +173,7 @@ function addRing(obj, ir, or, pos_x, pos_y, pos_z, material) {
 
     // Define extrude settings
     var extrudeSettings = {
+        curveSegments: 100,
         steps: 100,
         depth: 1
     };
@@ -159,11 +181,11 @@ function addRing(obj, ir, or, pos_x, pos_y, pos_z, material) {
     // Extrude the shape to create geometry
     var geometry = new THREE.ExtrudeGeometry(ringShape, extrudeSettings);
 
-    var mesh = new THREE.Mesh(geometry, material);
+    ringsMesh[index] = new THREE.Mesh(geometry, material);
 
-    mesh.rotateX(Math.PI / 2);
+    ringsMesh[index].rotateX(Math.PI / 2);
 
-    obj.add(mesh);
+    obj.add(ringsMesh[index]);
     obj.position.set(pos_x, pos_y, pos_z);
     obj.movement = { moving: false, up: true, down: false };
 }
@@ -368,9 +390,9 @@ function createMobiusStrip() {
     mobiusStrip.setIndex(new THREE.BufferAttribute(indices, 1));
     mobiusStrip.computeVertexNormals();
 
-    mesh = new THREE.Mesh( mobiusStrip, material10 );
-    mesh.position.set(0,5,0);
-    scene.add(mesh);
+    objectsMesh[24] = new THREE.Mesh( mobiusStrip, MeshLambertMaterial[4] );
+    objectsMesh[24].position.set(0,5,0);
+    scene.add(objectsMesh[24]);
 }
 
 function createPodium() {
@@ -378,7 +400,7 @@ function createPodium() {
 
     podium = new THREE.Object3D();
     
-    addCylinder(podium, c, c, c, material1); // add podium
+    addCylinder(podium, c, c, c, MeshLambertMaterial[0]); // add podium
 
     podium.position.x = 0;
     podium.position.y = c/2;
@@ -393,7 +415,7 @@ function createInnerRing() {
     innerRing = new THREE.Object3D();
     innerRing.movement = { moving: false, up: false, down: false }; 
 
-    addRing(innerRing, 13*c/12, 5*c/2, 0, c, 0, material2); // add innerRing
+    addRing(innerRing, 13*c/12, 5*c/2, 0, c, 0, MeshLambertMaterial[1], 1); // add innerRing
 
     scene.add(innerRing);
 }
@@ -403,7 +425,7 @@ function createMiddleRing() {
 
     middleRing = new THREE.Object3D();
     
-    addRing(middleRing, 37*c/14, 4*c, 0, 2*c, 0, material3); // add middleRing
+    addRing(middleRing, 37*c/14, 4*c, 0, 2*c, 0, MeshLambertMaterial[2], 2); // add middleRing
 
     scene.add(middleRing);
 }
@@ -413,7 +435,7 @@ function createOuterRing() {
 
     outerRing = new THREE.Object3D();
     
-    addRing(outerRing, 29*c/7, 11*c/2, 0, 3*c, 0, material4); // add outerRing
+    addRing(outerRing, 29*c/7, 11*c/2, 0, 3*c, 0, MeshLambertMaterial[3], 3); // add outerRing
 
     scene.add(outerRing);
 }
@@ -438,51 +460,51 @@ function createObjects() {
 
         // egg
         geometry = new ParametricGeometry(egg,100,100);
-        mesh = new THREE.Mesh(geometry, material10);
-        mesh.scale.set(0.4, 0.6, 0.4);
-        objects[0+8*j].add(mesh);
+        objectsMesh[0+8*j] = new THREE.Mesh(geometry, MeshLambertMaterial[4+((0+8*j)%3)]);
+        objectsMesh[0+8*j].scale.set(0.4, 0.6, 0.4);
+        objects[0+8*j].add(objectsMesh[0+8*j]);
 
         // klein bottle
         geometry = new ParametricGeometry(kleinFunction, 100, 100);
-        mesh = new THREE.Mesh( geometry, material10);
-        mesh.scale.set(0.07, 0.07, 0.07);
-        objects[1+8*j].add(mesh);
+        objectsMesh[1+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)]);
+        objectsMesh[1+8*j].scale.set(0.07, 0.07, 0.07);
+        objects[1+8*j].add(objectsMesh[1+8*j]);
         
         // sphere
         geometry = new ParametricGeometry(sphere, 200, 10);
-        mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.4, 0.4, 0.4);
-        objects[2+8*j].add(mesh);
+        objectsMesh[2+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[2+8*j].scale.set(0.4, 0.4, 0.4);
+        objects[2+8*j].add(objectsMesh[2+8*j]);
         
        // catenoid
         geometry = new ParametricGeometry(catenoid, 100, 100);
-        mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.2, 0.2, 0.2); 
-        objects[3+8*j].add(mesh);
+        objectsMesh[3+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[3+8*j].scale.set(0.2, 0.2, 0.2); 
+        objects[3+8*j].add(objectsMesh[3+8*j]);
         
         // torus
         geometry = new ParametricGeometry(torus, 100, 100);
-        mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.1, 0.1, 0.1); 
-        objects[4+8*j].add(mesh);
+        objectsMesh[4+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[4+8*j].scale.set(0.1, 0.1, 0.1); 
+        objects[4+8*j].add(objectsMesh[4+8*j]);
 
         // ennerSurface
         geometry = new ParametricGeometry(enneperSurface, 100, 100);
-        mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.3, 0.6, 0.3); 
-        objects[5+8*j].add(mesh);
+        objectsMesh[5+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[5+8*j].scale.set(0.3, 0.6, 0.3); 
+        objects[5+8*j].add(objectsMesh[5+8*j]);
 
         // hyperbolicParaboloid
         geometry = new ParametricGeometry(hyperbolicParaboloid, 100, 100);
-        mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.3, 0.3, 0.3);
-        objects[6+8*j].add(mesh);
+        objectsMesh[6+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[6+8*j].scale.set(0.3, 0.3, 0.3);
+        objects[6+8*j].add(objectsMesh[6+8*j]);
 
         // curvedring
         geometry = new ParametricGeometry(curvedring, 100, 100);
-        mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.15, 0.15, 0.15);
-        objects[7+8*j].add(mesh);
+        objectsMesh[7+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[7+8*j].scale.set(0.15, 0.15, 0.15);
+        objects[7+8*j].add(objectsMesh[7+8*j]);
         
     
         // positioning each object
@@ -591,6 +613,17 @@ function update(){
     })
 }
 
+// Function to change the materials of all objects
+function changeMaterials(listOfMaterials) {
+    for (var i = 0; i < ringsMesh.length; i++) {
+        ringsMesh[i].material = listOfMaterials[i];
+    }
+
+    for (i = 0; i < objectsMesh.length; i++) {
+        objectsMesh[i].material = listOfMaterials[4+Math.floor(Math.random() * 3)];
+    }
+}
+
 /////////////
 /* DISPLAY */
 /////////////
@@ -618,7 +651,7 @@ function init() {
     document.body.appendChild(renderer.domElement);
 
     createScene();
-    createCamera(5, 5, 0);
+    createCamera(7, 7, 0);
     
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("resize", onResize);
@@ -683,6 +716,40 @@ function onKeyDown(e) {
         pointLights.forEach(pointLight => {
             pointLight.visible = !pointLight.visible;
         });
+        break;
+ 
+    case 81: //Q'
+        changeMaterials(MeshLambertMaterial);
+        iluminations[0]= true;
+        iluminations[1]= MeshLambertMaterial;
+        break;
+    case 87: //'W'
+        changeMaterials(MeshPhongMaterial);
+        iluminations[0]= true;
+        iluminations[1]= MeshPhongMaterial;
+        break;
+    case 69: //'E'
+        changeMaterials(MeshToonMaterial);
+        iluminations[0]= true;
+        iluminations[1]= MeshToonMaterial;
+        break;
+    case 82: //'R'
+        changeMaterials(MeshNormalMaterial);
+        iluminations[0]= true;
+        iluminations[1]= MeshNormalMaterial;
+        break;
+    case 84: //'T'
+        if(iluminations[0]){
+            changeMaterials(MeshBasicMaterial);
+            iluminations[0]= false;
+        }
+        else{
+            changeMaterials(iluminations[1]);
+            iluminations[0]= true;
+        }
+        break;
+    default:
+        console.log(e.keyCodef);
         break;
     }
 }
