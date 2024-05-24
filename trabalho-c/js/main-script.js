@@ -9,7 +9,7 @@ import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.j
 /* GLOBAL VARIABLES */
 //////////////////////
 
-var podium, innerRing, middleRing, outerRing;
+var podium, innerRing, middleRing, outerRing, mobiusStrip;
 var scene, renderer, geometry, mesh;
 //var trefoilKnot, conicSpiral, sphere, torus, helix, ellipticParaboloid, hyperbolicParaboloid;
 var objects = new Array();
@@ -54,6 +54,7 @@ function createScene() {
     innerRing.add(new THREE.AxesHelper(8));
     middleRing.add(new THREE.AxesHelper(8));
     outerRing.add(new THREE.AxesHelper(8));
+    createMobiusStrip();
     scene.add(ambientLight);
     scene.add(directionalLight);
 }
@@ -88,7 +89,7 @@ function createCamera(x, y, z) {
 /* CREATE LIGHT(S) */
 /////////////////////
 
-ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+ambientLight = new THREE.AmbientLight(0xffffff);
 directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
 
 ////////////////////////
@@ -243,6 +244,57 @@ function createSkydome() {
     skydome.position.set(0, 0, 0);
 
     scene.add(skydome);
+}
+
+ // Function to create a Möbius strip
+function createMobiusStrip() {
+    'use strict';
+    mobiusStrip = new THREE.BufferGeometry();
+    
+    const vertices = new Float32Array([
+        -0.8, c/2, -0.6,                // vertex 0
+        -0.4, c/2, -0.9,                // vertex 1
+        0.4, c/2, -0.9,                 // vertex 2
+        0.8, c/2, -0.6,                 // vertex 3
+        0.8, c/2, 0.6,                  // vertex 4
+        0.4, c/2, 0.9,                  // vertex 5
+        -0.4, c/2, 0.9,                 // vertex 6
+        -0.8, c/2, 0.6,                 // vertex 7
+        -0.8, 0, -0.6,                  // vertex 8
+        -0.4, 0, -0.9,                  // vertex 9
+        0.4, 0, -0.9,                   // vertex 10
+        0.8, 0, -0.6,                   // vertex 11
+        0.8, 0, 0.6,                    // vertex 12
+        0.4, 0, 0.9,                    // vertex 13
+        -0.4, 0, 0.9,                   // vertex 14
+        -0.8, 0, 0.6,                   // vertex 15                 
+    ]);
+
+    const indices = new Uint32Array([
+        0, 1, 8,
+        1, 8, 9,
+        1, 2, 9,
+        2, 9, 10,
+        2, 3, 10,
+        3, 10, 11,
+        3, 4, 11,
+        4, 11, 12,
+        4, 5, 12,
+        5, 12, 13,
+        5, 6, 13,
+        6, 13, 14,
+        6, 7, 14,
+        7, 14, 15,
+        7, 0, 15,
+        0, 8, 15
+    ]);
+
+    mobiusStrip.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    mobiusStrip.setIndex(new THREE.BufferAttribute(indices, 1));
+
+    mesh = new THREE.Mesh( mobiusStrip, material8 );
+    mesh.position.set(0,5,0);
+    scene.add(mesh);
 }
 
 function createPodium() {
@@ -480,9 +532,9 @@ function update(){
     }
 
     // Objects rotation
-    /*objects.forEach(object => {
+    objects.forEach(object => {
         object.rotateY(Math.random()*s);
-    })*/
+    })
 }
 
 /////////////
