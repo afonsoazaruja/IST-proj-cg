@@ -28,9 +28,9 @@ var material8 = new THREE.MeshNormalMaterial({side:THREE.DoubleSide}); // red
 var material9 = new THREE.MeshLambertMaterial({ color: 0x6D3600, side:THREE.DoubleSide}); // brown
 var material10 = new THREE.MeshPhongMaterial({color:0xff0000, side:THREE.DoubleSide});
 
-const c=1, s=0.05, h=7, r=1.5;
+const c=1, s=2, h=7, r=1.5;
 
-var cam;
+var cam, clock, delta;
 
 var x, y, z;
 
@@ -126,8 +126,6 @@ function createLights() {
 ////////////////////////
 /* CREATE OBJECT3D(S) */
 ////////////////////////
-
-
 
 function addCylinder(obj, rt, rb, h, material) {
     'use strict';
@@ -350,7 +348,7 @@ function createInnerRing() {
     innerRing = new THREE.Object3D();
     innerRing.movement = { moving: false, up: false, down: false }; 
 
-    addRing(innerRing, c, 5*c/2, 0, c, 0, material2); // add innerRing
+    addRing(innerRing, 13*c/12, 5*c/2, 0, c, 0, material2); // add innerRing
 
     scene.add(innerRing);
 }
@@ -360,7 +358,7 @@ function createMiddleRing() {
 
     middleRing = new THREE.Object3D();
     
-    addRing(middleRing, 5*c/2, 4*c, 0, 2*c, 0, material3); // add middleRing
+    addRing(middleRing, 37*c/14, 4*c, 0, 2*c, 0, material3); // add middleRing
 
     scene.add(middleRing);
 }
@@ -370,7 +368,7 @@ function createOuterRing() {
 
     outerRing = new THREE.Object3D();
     
-    addRing(outerRing, 4*c, 11*c/2, 0, 3*c, 0, material4); // add outerRing
+    addRing(outerRing, 29*c/7, 11*c/2, 0, 3*c, 0, material4); // add outerRing
 
     scene.add(outerRing);
 }
@@ -396,17 +394,15 @@ function createObjects() {
         // egg
         geometry = new ParametricGeometry(egg,100,100);
         mesh = new THREE.Mesh(geometry, material10);
-        mesh.scale.set(0.2, 0.2, 0.2);
+        mesh.scale.set(0.4, 0.6, 0.4);
         objects[0+8*j].add(mesh);
 
-        
         // klein bottle
         geometry = new ParametricGeometry(kleinFunction, 100, 100);
         mesh = new THREE.Mesh( geometry, material10);
         mesh.scale.set(0.07, 0.07, 0.07);
         objects[1+8*j].add(mesh);
         
-       
         // sphere
         geometry = new ParametricGeometry(sphere, 200, 10);
         mesh = new THREE.Mesh( geometry, material10 );
@@ -428,7 +424,7 @@ function createObjects() {
         // ennerSurface
         geometry = new ParametricGeometry(enneperSurface, 100, 100);
         mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.3, 0.3, 0.3); 
+        mesh.scale.set(0.3, 0.6, 0.3); 
         objects[5+8*j].add(mesh);
 
         // hyperbolicParaboloid
@@ -440,13 +436,13 @@ function createObjects() {
         // curvedring
         geometry = new ParametricGeometry(curvedring, 100, 100);
         mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.1, 0.1, 0.1);
+        mesh.scale.set(0.15, 0.15, 0.15);
         objects[7+8*j].add(mesh);
         
     
         // positioning each object
         objects[0+8*j].position.x = c+r/2+(j*r);
-        objects[0+8*j].position.y = c/2 + 0.1;
+        objects[0+8*j].position.y = 4*c/3;
         objects[0+8*j].position.z = 0;
         
         objects[1+8*j].position.x = -(c+r/2+(j*r));
@@ -466,7 +462,7 @@ function createObjects() {
         objects[4+8*j].position.z = (Math.sqrt(2)/2*(c+r/2+j*r));
         
         objects[5+8*j].position.x = -(Math.sqrt(2)/2*(c+r/2+j*r));
-        objects[5+8*j].position.y = c/2 + 0.1;
+        objects[5+8*j].position.y = 4.6*c/4;
         objects[5+8*j].position.z = (Math.sqrt(2)/2*(c+r/2+j*r));
         
         objects[6+8*j].position.x = (Math.sqrt(2)/2*(c+r/2+j*r));
@@ -474,7 +470,7 @@ function createObjects() {
         objects[6+8*j].position.z = -(Math.sqrt(2)/2*(c+r/2+j*r));
 
         objects[7+8*j].position.x = -(Math.sqrt(2)/2*(c+r/2+j*r));
-        objects[7+8*j].position.y = c/2 + 0.1;
+        objects[7+8*j].position.y = c/2 + 0.30;
         objects[7+8*j].position.z = -(Math.sqrt(2)/2*(c+r/2+j*r));
         
         j++;
@@ -509,21 +505,21 @@ function update(){
     'use strict';
 
     // Ring rotation
-    // innerRing.rotation.y += s/10;
-    // middleRing.rotation.y += s/10;
-    // outerRing.rotation.y += s/10;
+    innerRing.rotation.y += s/10 * delta;
+    middleRing.rotation.y -= s/8 * delta;
+    outerRing.rotation.y += s/6 * delta;
 
     // Ring movement
     if(innerRing.movement.moving){
         if (innerRing.movement.up){
-            innerRing.position.y += s;
+            innerRing.position.y += s * delta;
             if(innerRing.position.y >= h){
                 innerRing.movement.up = false;
                 innerRing.movement.down = true;
             }
         }
         if(innerRing.movement.down){
-            innerRing.position.y -= s;
+            innerRing.position.y -= s * delta;
             if(innerRing.position.y <= c/2){
                 innerRing.movement.down = false;
                 innerRing.movement.up = true;
@@ -532,14 +528,14 @@ function update(){
     }
     if(middleRing.movement.moving){
         if (middleRing.movement.up){
-            middleRing.position.y += s;
+            middleRing.position.y += s * delta;
             if(middleRing.position.y >= h){
                 middleRing.movement.up = false;
                 middleRing.movement.down = true;
             }
         }
         if(middleRing.movement.down){
-            middleRing.position.y -= s;
+            middleRing.position.y -= s * delta;
             if(middleRing.position.y <= c/2){
                 middleRing.movement.down = false;
                 middleRing.movement.up = true;
@@ -549,14 +545,14 @@ function update(){
     
     if(outerRing.movement.moving){
         if (outerRing.movement.up){
-            outerRing.position.y += s;
+            outerRing.position.y += s * delta;
             if(outerRing.position.y >= h){
                 outerRing.movement.up = false;
                 outerRing.movement.down = true;
             }
         }
         if(outerRing.movement.down){
-            outerRing.position.y -= s;
+            outerRing.position.y -= s * delta;
             if(outerRing.position.y <= c/2){
                 outerRing.movement.down = false;
                 outerRing.movement.up = true;
@@ -566,7 +562,7 @@ function update(){
 
     // Objects rotation
     objects.forEach(object => {
-        object.rotateY(Math.random()*s);
+        object.rotateY(Math.random() * 3*s/2 * delta);
     })
 }
 
@@ -586,6 +582,8 @@ function render() {
 
 function init() {
     'use strict';
+
+    clock = new THREE.Clock();
 
     renderer = new THREE.WebGLRenderer({
         antialias: true
@@ -607,6 +605,8 @@ function init() {
 
 function animate() {
     'use strict';
+
+    delta = clock.getDelta();
 
     update();
     render();
