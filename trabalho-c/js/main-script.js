@@ -51,16 +51,10 @@ function createScene() {
     createInnerRing();
     createMiddleRing();
     createOuterRing();
+    createMobiusStrip();
     createObjects();
     createSkydome();
     createLights();
-    innerRing.add(new THREE.AxesHelper(8));
-    middleRing.add(new THREE.AxesHelper(8));
-    outerRing.add(new THREE.AxesHelper(8));
-    createMobiusStrip();
-    scene.add(ambientLight);
-    scene.add(directionalLight);
-
 }
 
 
@@ -75,7 +69,7 @@ function createCamera(x, y, z) {
     cam.position.y = y;
     cam.position.z = z;
 
-    cam.lookAt(scene.position);
+    cam.lookAt(0, 10, 0);
 
     // Initialize OrbitControls
     const controls = new OrbitControls(cam, renderer.domElement);
@@ -100,22 +94,25 @@ function createLights() {
     scene.add(ambientLight);
     
     // directional light
-    directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 0);
     directionalLight.lookAt(scene.position);
     scene.add(directionalLight);
 
     // point lights for mobius strip
     for (var i = 0; i < 8; i++) {
-        pointLights[i] = new THREE.PointLight(0xffffff, 1, 100);
+        var angle = (i / 8) * Math.PI * 2;
+        var x = 0.9 * Math.cos(angle);
+        var z = 0.9 * Math.sin(angle);
+        pointLights[i] = new THREE.PointLight(0xffffff, 1, 1);
         pointLights[i].visible = false; // Initially off
-        pointLights[i].position.set(podium.position.x, podium.position.y + 2, podium.position.z + 2 * i - 4);
+        pointLights[i].position.set(x, 5, z);
         scene.add(pointLights[i]);
     }
 
     // spolights for each object
     for (var i = 0; i < 24; i++) {
-        spotlights[i] = new THREE.SpotLight(0xffffff, 10);
+        spotlights[i] = new THREE.SpotLight(0xffffff, 5);
         spotlights[i].visible = false; // Initially off
         spotlights[i].position.set(objects[i].position.x, objects[i].position.y - 2, objects[i].position.z);
         spotlights[i].lookAt(objects[i].position);
@@ -281,49 +278,73 @@ function createSkydome() {
 function createMobiusStrip() {
     'use strict';
     mobiusStrip = new THREE.BufferGeometry();
-    
+
     const vertices = new Float32Array([
-        -0.8, c/2, -0.6,                // vertex 0
-        -0.4, c/2, -0.9,                // vertex 1
-        0.4, c/2, -0.9,                 // vertex 2
-        0.8, c/2, -0.6,                 // vertex 3
-        0.8, c/2, 0.6,                  // vertex 4
-        0.4, c/2, 0.9,                  // vertex 5
-        -0.4, c/2, 0.9,                 // vertex 6
-        -0.8, c/2, 0.6,                 // vertex 7
-        -0.8, 0, -0.6,                  // vertex 8
-        -0.4, 0, -0.9,                  // vertex 9
-        0.4, 0, -0.9,                   // vertex 10
-        0.8, 0, -0.6,                   // vertex 11
-        0.8, 0, 0.6,                    // vertex 12
-        0.4, 0, 0.9,                    // vertex 13
-        -0.4, 0, 0.9,                   // vertex 14
-        -0.8, 0, 0.6,                   // vertex 15                 
+        -0.75, c/2, 0,            // v0
+        
+        -0.75, 0, 0.15,           // v1
+        -0.60, c/2, 0.3,          // v2
+        -0.60, 0, 0.45,           // v3
+        -0.3, c/2, 0.6,           // v4
+        -0.15, 0, 0.75,           // v5
+        
+        0, c/2-0.1, 0.75,         // v6
+
+        0.15, 0.1, 0.60,          // v7
+        0.3, c/2-0.15, 0.75,      // v8
+        0.50, 0.2, 0.45,          // v9
+        0.6, c/2-0.20, 0.5,       // v10
+        0.5, 0.2, 0.15,           // v11
+        
+        0.8, c/2-0.25, 0,         // v12
+        
+        0.55, 0.3, -0.15,         // v13
+        0.75, c/2-0.3, -0.3,      // v14
+        0.5, 0.40, -0.40,         // v15
+        0.5, c/2-0.4, -0.6,       // v16
+        0.2, 0.45, -0.70,         // v17
+        
+        0, c/2, -0.75,            // v18
+        
+        -0.15, 0, -0.75,          // v19
+        -0.3, c/2, -0.6,          // v20
+        -0.45, 0, -0.60,          // v21
+        -0.6, c/2, -0.3,          // v22
+        -0.75, 0, -0.15,          // v23
     ]);
 
     const indices = new Uint32Array([
-        0, 1, 8,
-        1, 8, 9,
-        1, 2, 9,
-        2, 9, 10,
-        2, 3, 10,
-        3, 10, 11,
-        3, 4, 11,
-        4, 11, 12,
-        4, 5, 12,
-        5, 12, 13,
-        5, 6, 13,
-        6, 13, 14,
-        6, 7, 14,
-        7, 14, 15,
-        7, 0, 15,
-        0, 8, 15
+        1, 2, 0,        // f1
+        3, 2, 1,        // f2
+        3, 4, 2,        // f3
+        5, 4, 3,        // f4
+        5, 6, 4,        // f5
+        7, 6, 5,        // f6
+        7, 8, 6,        // f7
+        9, 8, 7,        // f8
+        9, 10, 8,       // f9
+        11, 10, 9,      // f10
+        11, 12, 10,     // f11
+        13, 12, 11,     // f12
+        13, 14, 12,     // f13
+        15, 14, 13,     // f14
+        15, 16, 14,     // f15
+        17, 16, 15,     // f16
+        19, 17, 16,     // f17
+        19, 18, 17,     // f18
+        19, 20, 18,     // f19
+        21, 20, 19,     // f20
+        21, 22, 20,     // f21
+        23, 22, 21,     // f22
+        23, 0, 22,      // f23
+        1, 0, 23        // f24
     ]);
 
     mobiusStrip.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     mobiusStrip.setIndex(new THREE.BufferAttribute(indices, 1));
+    mobiusStrip.computeVertexNormals();
 
-    mesh = new THREE.Mesh( mobiusStrip, material8 );
+    mesh = new THREE.Mesh( mobiusStrip, material10 );
     mesh.position.set(0,5,0);
     scene.add(mesh);
 }
@@ -506,8 +527,8 @@ function update(){
 
     // Ring rotation
     innerRing.rotation.y += s/10 * delta;
-    middleRing.rotation.y -= s/8 * delta;
-    outerRing.rotation.y += s/6 * delta;
+    middleRing.rotation.y += s/10 * delta;
+    outerRing.rotation.y += s/10 * delta;
 
     // Ring movement
     if(innerRing.movement.moving){
@@ -593,7 +614,7 @@ function init() {
     document.body.appendChild(renderer.domElement);
 
     createScene();
-    createCamera(0, 10, 0);
+    createCamera(5, 5, 0);
     
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
