@@ -61,7 +61,10 @@ function createScene() {
 //////////////////////
 /* CREATE CAMERA(S) */
 //////////////////////
+
 function createCamera(x, y, z) {
+    'use strict';
+
     cam = new THREE.PerspectiveCamera(70,
             window.innerWidth / window.innerHeight, 0.4, 1000);
     
@@ -86,6 +89,7 @@ function createCamera(x, y, z) {
 /////////////////////
 /* CREATE LIGHT(S) */
 /////////////////////
+
 function createLights() {
     'use strict';
     
@@ -120,6 +124,7 @@ function createLights() {
     }
     
 }
+
 ////////////////////////
 /* CREATE OBJECT3D(S) */
 ////////////////////////
@@ -165,6 +170,8 @@ function addRing(obj, ir, or, pos_x, pos_y, pos_z, material) {
 
 // Parametric Functions Constructors
 function kleinFunction(u, v, target) {
+    'use strict';
+
     u *= Math.PI;
     v *= 2 * Math.PI;
     u = u * 2;
@@ -180,6 +187,8 @@ function kleinFunction(u, v, target) {
 }
 
 function torus(u, v, target) {
+    'use strict';
+
     const r = 1;
     const R = 2;
     const theta = 2 * Math.PI * u;
@@ -191,6 +200,8 @@ function torus(u, v, target) {
 }
 
 function hyperbolicParaboloid(u, v, target) {
+    'use strict';
+
     x = u * 2 - 1;
     y = v * 2 - 1;
     z = x * x - y * y;
@@ -198,6 +209,8 @@ function hyperbolicParaboloid(u, v, target) {
 }
 
 function sphere(u, v, target) {
+    'use strict';
+
     var u = (u * 2 * Math.PI) - Math.PI;
     var v = (v * 2 * Math.PI) - Math.PI;
 
@@ -210,6 +223,8 @@ function sphere(u, v, target) {
 }
 
 function egg(u, v, target) {
+    'use strict';
+
     var u = u * 2 * Math.PI;
     var v = (v * 2 * Math.PI) - Math.PI;
 
@@ -222,6 +237,8 @@ function egg(u, v, target) {
 }
 
 function curvedring(u, v, target) {
+    'use strict';
+
     var a = 3;
     var n = 3;
     var m = 1;
@@ -237,6 +254,8 @@ function curvedring(u, v, target) {
 }
 
 function catenoid(u, v, target) {
+    'use strict';
+
     const a = 1;
     const x = a * Math.cosh(v * 2 - 1) * Math.cos(u * 2 * Math.PI);
     const y = a * Math.cosh(v * 2 - 1) * Math.sin(u * 2 * Math.PI);
@@ -245,6 +264,8 @@ function catenoid(u, v, target) {
 }
 
 function enneperSurface(u, v, target) {
+    'use strict';
+
     u = (u - 0.5) * 2;
     v = (v - 0.5) * 2;
     const x = u - (u ** 3) / 3 + u * v ** 2;
@@ -254,6 +275,8 @@ function enneperSurface(u, v, target) {
 }
 
 function createSkydome() {
+    'use strict';
+
     const radius = 10;
     const widthSegments = 32;
     const heightSegments = 16;
@@ -277,6 +300,7 @@ function createSkydome() {
  // Function to create a Möbius strip
 function createMobiusStrip() {
     'use strict';
+
     mobiusStrip = new THREE.BufferGeometry();
 
     const vertices = new Float32Array([
@@ -498,26 +522,6 @@ function createObjects() {
     }
 }
 
-//////////////////////
-/* CHECK COLLISIONS */
-//////////////////////
-
-// no collisions in this project
-function checkCollisions(){
-    'use strict';
-
-}
-
-///////////////////////
-/* HANDLE COLLISIONS */
-///////////////////////
-
-// no collisions in this project
-function handleCollisions(){
-    'use strict';
-
-}
-
 ////////////
 /* UPDATE */
 ////////////
@@ -617,7 +621,7 @@ function init() {
     createCamera(5, 5, 0);
     
     window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("resize", onResize);
 }
 
 /////////////////////
@@ -642,6 +646,12 @@ function animate() {
 function onResize() { 
     'use strict';
 
+    // Update camera aspect ratio
+    cam.aspect = window.innerWidth / window.innerHeight;
+    cam.updateProjectionMatrix();
+
+    // Update renderer size
+    renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 ///////////////////////
@@ -673,25 +683,6 @@ function onKeyDown(e) {
         pointLights.forEach(pointLight => {
             pointLight.visible = !pointLight.visible;
         });
-        break;
-    }
-}
-
-///////////////////////
-/* KEY UP CALLBACK */
-///////////////////////
-
-function onKeyUp(e){
-    'use strict';
-
-    switch (e.keyCode) {
-    case 49: //'1'
-        break;
-
-    case 50: //'2'
-        break;
-
-    case 51: //'3'
         break;
     }
 }
