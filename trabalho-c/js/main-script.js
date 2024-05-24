@@ -13,6 +13,8 @@ var podium, innerRing, middleRing, outerRing, mobiusStrip;
 var scene, renderer, geometry, mesh;
 //var trefoilKnot, conicSpiral, sphere, torus, helix, ellipticParaboloid, hyperbolicParaboloid;
 var objects = new Array();
+var spotlights = new Array();
+var pointLights = new Array();
 
 // materials
 var material1 = new THREE.MeshBasicMaterial({ color: 0xEEAD2D}); // gold
@@ -51,12 +53,14 @@ function createScene() {
     createOuterRing();
     createObjects();
     createSkydome();
+    createLights();
     innerRing.add(new THREE.AxesHelper(8));
     middleRing.add(new THREE.AxesHelper(8));
     outerRing.add(new THREE.AxesHelper(8));
     createMobiusStrip();
     scene.add(ambientLight);
     scene.add(directionalLight);
+
 }
 
 
@@ -88,13 +92,42 @@ function createCamera(x, y, z) {
 /////////////////////
 /* CREATE LIGHT(S) */
 /////////////////////
+function createLights() {
+    'use strict';
+    
+    // ambient light
+    ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+    scene.add(ambientLight);
+    
+    // directional light
+    directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight.position.set(5, 10, 0);
+    directionalLight.lookAt(scene.position);
+    scene.add(directionalLight);
 
-ambientLight = new THREE.AmbientLight(0xffffff);
-directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    // point lights for mobius strip
+    for (var i = 0; i < 8; i++) {
+        pointLights[i] = new THREE.PointLight(0xffffff, 1, 100);
+        pointLights[i].visible = false; // Initially off
+        pointLights[i].position.set(podium.position.x, podium.position.y + 2, podium.position.z + 2 * i - 4);
+        scene.add(pointLights[i]);
+    }
 
+    // spolights for each object
+    for (var i = 0; i < 24; i++) {
+        spotlights[i] = new THREE.SpotLight(0xffffff, 10);
+        spotlights[i].visible = false; // Initially off
+        spotlights[i].position.set(objects[i].position.x, objects[i].position.y - 2, objects[i].position.z);
+        spotlights[i].lookAt(objects[i].position);
+        scene.add(spotlights[i]);   
+    }
+    
+}
 ////////////////////////
 /* CREATE OBJECT3D(S) */
 ////////////////////////
+
+
 
 function addCylinder(obj, rt, rb, h, material) {
     'use strict';
@@ -362,22 +395,22 @@ function createObjects() {
 
         // egg
         geometry = new ParametricGeometry(egg,100,100);
-        mesh = new THREE.Mesh(geometry, material7);
-        mesh.scale.set(0.1, 0.1, 0.1);
+        mesh = new THREE.Mesh(geometry, material10);
+        mesh.scale.set(0.2, 0.2, 0.2);
         objects[0+8*j].add(mesh);
 
         
         // klein bottle
         geometry = new ParametricGeometry(kleinFunction, 100, 100);
-        mesh = new THREE.Mesh( geometry, material8);
-        mesh.scale.set(0.08, 0.08, 0.08);
+        mesh = new THREE.Mesh( geometry, material10);
+        mesh.scale.set(0.07, 0.07, 0.07);
         objects[1+8*j].add(mesh);
         
        
         // sphere
         geometry = new ParametricGeometry(sphere, 200, 10);
         mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.5, 0.5, 0.5);
+        mesh.scale.set(0.4, 0.4, 0.4);
         objects[2+8*j].add(mesh);
         
        // catenoid
@@ -401,27 +434,27 @@ function createObjects() {
         // hyperbolicParaboloid
         geometry = new ParametricGeometry(hyperbolicParaboloid, 100, 100);
         mesh = new THREE.Mesh( geometry, material10 );
-        mesh.scale.set(0.6, 0.6, 0.6);
+        mesh.scale.set(0.3, 0.3, 0.3);
         objects[6+8*j].add(mesh);
 
         // curvedring
         geometry = new ParametricGeometry(curvedring, 100, 100);
-        mesh = new THREE.Mesh( geometry, material9 );
+        mesh = new THREE.Mesh( geometry, material10 );
         mesh.scale.set(0.1, 0.1, 0.1);
         objects[7+8*j].add(mesh);
         
     
         // positioning each object
         objects[0+8*j].position.x = c+r/2+(j*r);
-        objects[0+8*j].position.y = (c/2);
+        objects[0+8*j].position.y = c/2 + 0.1;
         objects[0+8*j].position.z = 0;
         
         objects[1+8*j].position.x = -(c+r/2+(j*r));
-        objects[1+8*j].position.y = (c/2);
+        objects[1+8*j].position.y = c/2;
         objects[1+8*j].position.z = 0;
         
         objects[2+8*j].position.x = 0;
-        objects[2+8*j].position.y = c/2;
+        objects[2+8*j].position.y = c/2 + 0.1;
         objects[2+8*j].position.z = c+r/2+(j*r);
         
         objects[3+8*j].position.x = 0;
@@ -433,15 +466,15 @@ function createObjects() {
         objects[4+8*j].position.z = (Math.sqrt(2)/2*(c+r/2+j*r));
         
         objects[5+8*j].position.x = -(Math.sqrt(2)/2*(c+r/2+j*r));
-        objects[5+8*j].position.y = c/2;
+        objects[5+8*j].position.y = c/2 + 0.1;
         objects[5+8*j].position.z = (Math.sqrt(2)/2*(c+r/2+j*r));
         
         objects[6+8*j].position.x = (Math.sqrt(2)/2*(c+r/2+j*r));
-        objects[6+8*j].position.y = c/2;
+        objects[6+8*j].position.y = c/2 + 0.1;
         objects[6+8*j].position.z = -(Math.sqrt(2)/2*(c+r/2+j*r));
 
         objects[7+8*j].position.x = -(Math.sqrt(2)/2*(c+r/2+j*r));
-        objects[7+8*j].position.y = c/2;
+        objects[7+8*j].position.y = c/2 + 0.1;
         objects[7+8*j].position.z = -(Math.sqrt(2)/2*(c+r/2+j*r));
         
         j++;
@@ -476,9 +509,9 @@ function update(){
     'use strict';
 
     // Ring rotation
-    innerRing.rotation.y += s/10;
-    middleRing.rotation.y -= s/8;
-    outerRing.rotation.y += s/6;
+    // innerRing.rotation.y += s/10;
+    // middleRing.rotation.y += s/10;
+    // outerRing.rotation.y += s/10;
 
     // Ring movement
     if(innerRing.movement.moving){
@@ -606,6 +639,19 @@ function onKeyDown(e) {
         break;
     case 51: //'3'
         outerRing.movement.moving = !outerRing.movement.moving;
+        break;
+    case 68: //'D'
+        directionalLight.visible = !directionalLight.visible;
+        break;
+    case 83: //'S'
+        spotlights.forEach(spotlight => {
+            spotlight.visible = !spotlight.visible;
+        });
+        break;
+    case 80: //'P'
+        pointLights.forEach(pointLight => {
+            pointLight.visible = !pointLight.visible;
+        });
         break;
     }
 }
