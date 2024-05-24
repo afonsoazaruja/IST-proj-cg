@@ -10,7 +10,7 @@ import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.j
 //////////////////////
 
 var podium, innerRing, middleRing, outerRing, mobiusStrip;
-var scene, renderer, geometry, mesh;
+var scene, renderer, geometry;
 
 var objects = new Array();
 var objectsMesh = new Array();
@@ -18,11 +18,9 @@ var ringsMesh = new Array();
 var spotlights = new Array();
 var pointLights = new Array();
 
-const c=1, s=2, h=7, r=1.5;
+const c=1, s=0.5, h=2, r=1.5;
 
-var cam, clock, delta;
-
-var x, y, z;
+var cam, vrcam, clock, delta;
 
 // lights
 var ambientLight, directionalLight;
@@ -31,28 +29,32 @@ var ambientLight, directionalLight;
 var MeshLambertMaterial= 
 [new THREE.MeshLambertMaterial({color: 0xF0E805,side:THREE.DoubleSide}),
  new THREE.MeshLambertMaterial({color: 0xF4AE04,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0xF87403,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0xFD1D01,side:THREE.DoubleSide}), 
- new THREE.MeshLambertMaterial({color: 0x7200AB,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0x00AA06,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0xFF00B3,side:THREE.DoubleSide})];
+ new THREE.MeshLambertMaterial({color: 0x7200AB,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0x00AA06,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0xFF00B3,side:THREE.DoubleSide}),
+ new THREE.MeshLambertMaterial({color: 0x0FF7F0,side:THREE.DoubleSide}), new THREE.MeshLambertMaterial({color: 0x634EF2,side:THREE.DoubleSide})];
 
 var MeshPhongMaterial=
 [new THREE.MeshPhongMaterial({color: 0xF0E805,shininess:100,side:THREE.DoubleSide}),
  new THREE.MeshPhongMaterial({color: 0xF4AE04,shininess:100,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0xF87403,shininess:100,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0xFD1D01,shininess:100,side:THREE.DoubleSide}),
- new THREE.MeshPhongMaterial({color: 0x7200AB,shininess:100,emissive:0x9A00AD,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0x00AA06,shininess:100,emissive: 0x00C210,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0xFF00B3,shininess:100,emissive:0xEB00B2,side:THREE.DoubleSide})];
+ new THREE.MeshPhongMaterial({color: 0x7200AB,shininess:100,emissive:0x9A00AD,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0x00AA06,shininess:100,emissive: 0x00C210,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0xFF00B3,shininess:100,emissive:0xEB00B2,side:THREE.DoubleSide}),
+ new THREE.MeshPhongMaterial({color: 0x0FF7F0,shininess:100,emissive:0x31D4E7,side:THREE.DoubleSide}), new THREE.MeshPhongMaterial({color: 0x634EF2,shininess:100,emissive:0x634EF2,side:THREE.DoubleSide})];
 
 var MeshToonMaterial=
 [new THREE.MeshToonMaterial({color: 0xF0E805,side:THREE.DoubleSide}),
  new THREE.MeshToonMaterial({color: 0xF4AE04,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0xF87403,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0xFD1D01,side:THREE.DoubleSide}),
- new THREE.MeshToonMaterial({color: 0x7200AB,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0x00AA06,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0xFF00B3,side:THREE.DoubleSide})];
+ new THREE.MeshToonMaterial({color: 0x7200AB,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0x00AA06,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0xFF00B3,side:THREE.DoubleSide}),
+ new THREE.MeshToonMaterial({color: 0x0FF7F0,side:THREE.DoubleSide}), new THREE.MeshToonMaterial({color: 0x634EF2,side:THREE.DoubleSide})];
 
 var MeshNormalMaterial=
 [new THREE.MeshNormalMaterial({side:THREE.DoubleSide}),
  new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide}),
- new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide})];
+ new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide}),
+ new THREE.MeshNormalMaterial({side:THREE.DoubleSide}), new THREE.MeshNormalMaterial({side:THREE.DoubleSide})];
 
 var MeshBasicMaterial=
 [new THREE.MeshBasicMaterial({color: 0xF0E805,side:THREE.DoubleSide}),
  new THREE.MeshBasicMaterial({color: 0xF4AE04,side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0xF87403,side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0xFD1D01,side:THREE.DoubleSide}),
- new THREE.MeshBasicMaterial({color: 0x7200AB, side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0x00AA06,side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0xFF00B3,side:THREE.DoubleSide})];
-
+ new THREE.MeshBasicMaterial({color: 0x7200AB,side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0x00AA06,side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0xFF00B3,side:THREE.DoubleSide}),
+ new THREE.MeshBasicMaterial({color: 0x0FF7F0,side:THREE.DoubleSide}), new THREE.MeshBasicMaterial({color: 0x634EF2,side:THREE.DoubleSide})];
 
 var iluminations = new Array();
 iluminations[0] = true;
@@ -77,7 +79,6 @@ function createScene() {
     createSkydome();
     createLights();
 }
-
 
 //////////////////////
 /* CREATE CAMERA(S) */
@@ -107,6 +108,11 @@ function createCamera(x, y, z) {
     controls.maxPolarAngle = Math.PI / 2; // Limit vertical angle
 }
 
+function createVRcamera() {
+    'use strict';
+    vrcam = new THREE.StereoCamera();
+}
+
 /////////////////////
 /* CREATE LIGHT(S) */
 /////////////////////
@@ -115,13 +121,15 @@ function createLights() {
     'use strict';
     
     // ambient light
-    ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+    ambientLight = new THREE.AmbientLight(0xF78A0E); // Soft white light
+    ambientLight.intensity = 0.2;
     scene.add(ambientLight);
     
     // directional light
     directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 0);
     directionalLight.lookAt(scene.position);
+    directionalLight.visible = true; // Initially on
     scene.add(directionalLight);
 
     // point lights for mobius strip
@@ -130,7 +138,7 @@ function createLights() {
         var x = 0.9 * Math.cos(angle);
         var z = 0.9 * Math.sin(angle);
         pointLights[i] = new THREE.PointLight(0xffffff, 1, 1);
-        pointLights[i].visible = false; // Initially off
+        pointLights[i].visible = true; // Initially on
         pointLights[i].position.set(x, 5, z);
         scene.add(pointLights[i]);
     }
@@ -138,7 +146,7 @@ function createLights() {
     // spolights for each object
     for (var i = 0; i < 24; i++) {
         spotlights[i] = new THREE.SpotLight(0xffffff, 5);
-        spotlights[i].visible = false; // Initially off
+        spotlights[i].visible = true; // Initially on
         spotlights[i].position.set(objects[i].position.x, objects[i].position.y - 2, objects[i].position.z);
         spotlights[i].lookAt(objects[i].position);
         scene.add(spotlights[i]);   
@@ -187,7 +195,7 @@ function addRing(obj, ir, or, pos_x, pos_y, pos_z, material, index) {
 
     obj.add(ringsMesh[index]);
     obj.position.set(pos_x, pos_y, pos_z);
-    obj.movement = { moving: false, up: true, down: false };
+    obj.movement = { moving: true, up: true, down: false };
 }
 
 // Parametric Functions Constructors
@@ -197,6 +205,7 @@ function kleinFunction(u, v, target) {
     u *= Math.PI;
     v *= 2 * Math.PI;
     u = u * 2;
+    var x, y, z;
     if (u < Math.PI) {
         x = 3 * Math.cos(u) * (1 + Math.sin(u)) + 2 * (1 - Math.cos(u / 2)) * Math.cos(u) * Math.cos(v);
         z = -8 * Math.sin(u / 2) - 2 * (1 - Math.cos(u / 2)) * Math.sin(u) * Math.sin(v);
@@ -215,18 +224,18 @@ function torus(u, v, target) {
     const R = 2;
     const theta = 2 * Math.PI * u;
     const phi = 2 * Math.PI * v;
-    x = (R + r * Math.cos(phi)) * Math.cos(theta);
-    y = (R + r * Math.cos(phi)) * Math.sin(theta);
-    z = r * Math.sin(phi);
+    const x = (R + r * Math.cos(phi)) * Math.cos(theta);
+    const y = (R + r * Math.cos(phi)) * Math.sin(theta);
+    const z = r * Math.sin(phi);
     target.set(x, y, z);
 }
 
 function hyperbolicParaboloid(u, v, target) {
     'use strict';
 
-    x = u * 2 - 1;
-    y = v * 2 - 1;
-    z = x * x - y * y;
+    const x = u * 2 - 1;
+    const y = v * 2 - 1;
+    const z = x * x - y * y;
     target.set(x, y, z);
 }
 
@@ -412,8 +421,7 @@ function createPodium() {
 function createInnerRing() {
     'use strict';
 
-    innerRing = new THREE.Object3D();
-    innerRing.movement = { moving: false, up: false, down: false }; 
+    innerRing = new THREE.Object3D(); 
 
     addRing(innerRing, 13*c/12, 5*c/2, 0, c, 0, MeshLambertMaterial[1], 1); // add innerRing
 
@@ -460,49 +468,49 @@ function createObjects() {
 
         // egg
         geometry = new ParametricGeometry(egg,100,100);
-        objectsMesh[0+8*j] = new THREE.Mesh(geometry, MeshLambertMaterial[4+((0+8*j)%3)]);
+        objectsMesh[0+8*j] = new THREE.Mesh(geometry, MeshLambertMaterial[4+((0+8*j)%5)]);
         objectsMesh[0+8*j].scale.set(0.4, 0.6, 0.4);
         objects[0+8*j].add(objectsMesh[0+8*j]);
 
         // klein bottle
         geometry = new ParametricGeometry(kleinFunction, 100, 100);
-        objectsMesh[1+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)]);
+        objectsMesh[1+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%5)]);
         objectsMesh[1+8*j].scale.set(0.07, 0.07, 0.07);
         objects[1+8*j].add(objectsMesh[1+8*j]);
         
         // sphere
         geometry = new ParametricGeometry(sphere, 200, 10);
-        objectsMesh[2+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[2+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%5)] );
         objectsMesh[2+8*j].scale.set(0.4, 0.4, 0.4);
         objects[2+8*j].add(objectsMesh[2+8*j]);
         
        // catenoid
         geometry = new ParametricGeometry(catenoid, 100, 100);
-        objectsMesh[3+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[3+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%5)] );
         objectsMesh[3+8*j].scale.set(0.2, 0.2, 0.2); 
         objects[3+8*j].add(objectsMesh[3+8*j]);
         
         // torus
         geometry = new ParametricGeometry(torus, 100, 100);
-        objectsMesh[4+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[4+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%5)] );
         objectsMesh[4+8*j].scale.set(0.1, 0.1, 0.1); 
         objects[4+8*j].add(objectsMesh[4+8*j]);
 
         // ennerSurface
         geometry = new ParametricGeometry(enneperSurface, 100, 100);
-        objectsMesh[5+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[5+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%5)] );
         objectsMesh[5+8*j].scale.set(0.3, 0.6, 0.3); 
         objects[5+8*j].add(objectsMesh[5+8*j]);
 
         // hyperbolicParaboloid
         geometry = new ParametricGeometry(hyperbolicParaboloid, 100, 100);
-        objectsMesh[6+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[6+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%5)] );
         objectsMesh[6+8*j].scale.set(0.3, 0.3, 0.3);
         objects[6+8*j].add(objectsMesh[6+8*j]);
 
         // curvedring
         geometry = new ParametricGeometry(curvedring, 100, 100);
-        objectsMesh[7+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%3)] );
+        objectsMesh[7+8*j] = new THREE.Mesh( geometry, MeshLambertMaterial[4+((0+8*j)%5)] );
         objectsMesh[7+8*j].scale.set(0.15, 0.15, 0.15);
         objects[7+8*j].add(objectsMesh[7+8*j]);
         
@@ -517,11 +525,11 @@ function createObjects() {
         objects[1+8*j].position.z = 0;
         
         objects[2+8*j].position.x = 0;
-        objects[2+8*j].position.y = c/2 + 0.1;
+        objects[2+8*j].position.y = c/2 ;
         objects[2+8*j].position.z = c+r/2+(j*r);
         
         objects[3+8*j].position.x = 0;
-        objects[3+8*j].position.y = c/2;
+        objects[3+8*j].position.y = c/2 + 0.005;
         objects[3+8*j].position.z = -(c+r/2+(j*r));
         
         objects[4+8*j].position.x = (Math.sqrt(2)/2*(c+r/2+j*r));
@@ -533,7 +541,7 @@ function createObjects() {
         objects[5+8*j].position.z = (Math.sqrt(2)/2*(c+r/2+j*r));
         
         objects[6+8*j].position.x = (Math.sqrt(2)/2*(c+r/2+j*r));
-        objects[6+8*j].position.y = c/2 + 0.1;
+        objects[6+8*j].position.y = c/2;
         objects[6+8*j].position.z = -(Math.sqrt(2)/2*(c+r/2+j*r));
 
         objects[7+8*j].position.x = -(Math.sqrt(2)/2*(c+r/2+j*r));
@@ -551,16 +559,17 @@ function createObjects() {
 function update(){
     'use strict';
 
+    podium.rotation.y += s/10 * delta;
     // Ring rotation
-    innerRing.rotation.y += s/10 * delta;
-    middleRing.rotation.y += s/10 * delta;
-    outerRing.rotation.y += s/10 * delta;
+    innerRing.rotation.y += s/5 * delta;
+    middleRing.rotation.y += s/7 * delta;
+    outerRing.rotation.y += s/9 * delta;
 
     // Ring movement
     if(innerRing.movement.moving){
         if (innerRing.movement.up){
             innerRing.position.y += s * delta;
-            if(innerRing.position.y >= h){
+            if(innerRing.position.y >= h-0.8){
                 innerRing.movement.up = false;
                 innerRing.movement.down = true;
             }
@@ -576,7 +585,7 @@ function update(){
     if(middleRing.movement.moving){
         if (middleRing.movement.up){
             middleRing.position.y += s * delta;
-            if(middleRing.position.y >= h){
+            if(middleRing.position.y >= h-0.4){
                 middleRing.movement.up = false;
                 middleRing.movement.down = true;
             }
@@ -620,7 +629,7 @@ function changeMaterials(listOfMaterials) {
     }
 
     for (i = 0; i < objectsMesh.length; i++) {
-        objectsMesh[i].material = listOfMaterials[4+Math.floor(Math.random() * 3)];
+        objectsMesh[i].material = listOfMaterials[4+Math.floor(Math.random() * 5)];
     }
 }
 
@@ -646,12 +655,18 @@ function init() {
     renderer = new THREE.WebGLRenderer({
         antialias: true
     });
-    
+    renderer.setPixelRatio(window.devicePixelRatio);
+
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
+    renderer.xr.enabled = true;
+    document.body.appendChild( VRButton.createButton( renderer ) );
+    
+
     createScene();
     createCamera(7, 7, 0);
+    createVRcamera();
     
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("resize", onResize);
@@ -669,8 +684,10 @@ function animate() {
     update();
     render();
 
-    requestAnimationFrame(animate);
+    //requestAnimationFrame(animate);
+    renderer.setAnimationLoop(animate);
 }
+
 
 ////////////////////////////
 /* RESIZE WINDOW CALLBACK */
@@ -747,9 +764,6 @@ function onKeyDown(e) {
             changeMaterials(iluminations[1]);
             iluminations[0]= true;
         }
-        break;
-    default:
-        console.log(e.keyCodef);
         break;
     }
 }
